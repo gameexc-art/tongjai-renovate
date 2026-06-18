@@ -1,0 +1,1076 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F6F2">
+<title>TONGJAI RENOVATE</title>
+<style>
+/* ============================================================
+   TONGJAI RENOVATE — TONGJAI BLUEPRINT design system
+   Standalone, offline, pure HTML/CSS/JS. No external resources.
+   ============================================================ */
+:root{
+  /* BRAND MARK (fixed, never recolor) */
+  --brand-red:#E23B33; --brand-blue:#2667D6; --brand-orange:#F08A24; --brand-green:#2FA45A;
+
+  /* STRUCTURAL ACCENT (the one app blue) */
+  --accent:#1E5FCC; --accent-hover:#1A54B5; --accent-press:#174AA0;
+  --accent-tint:#EAF1FC; --accent-border:#BFD6F4; --accent-ring:rgba(30,95,204,.30);
+
+  /* PAPER / NEUTRALS */
+  --bg-canvas:#F6F6F2; --surface:#FFFFFF; --surface-2:#FBFAF7;
+  --line:#EAE7DF; --line-strong:#DBD9D1;
+  --ink:#15181E; --ink-2:#3C424C; --ink-3:#646B75; --ink-4:#9AA0A8;
+
+  /* SEMANTIC MONEY + STATUS */
+  --pos-text:#18753F; --pos-bar:#2FA45A; --pos-tint:#E7F4EC; --pos-border:#BFE3CC; --pos-btn:#178045; --pos-btn-hover:#14723C;
+  --neg-text:#C8322B; --neg-bar:#E23B33; --neg-tint:#FBEAE9; --neg-border:#F0C9C7; --neg-btn:#E23B33; --neg-btn-hover:#C72A22;
+  --amber:#9C520B; --amber-tint:#FCF0E0; --amber-bar:#F08A24;
+
+  /* CATEGORY BADGES */
+  --cat-mat-t:#475569; --cat-mat-bg:#EEF1F5; --cat-mat-bd:#DCE2EA;
+  --cat-lab-t:#185FA5; --cat-lab-bg:#EAF1FC; --cat-lab-bd:#BFD6F4;
+  --cat-tra-t:#0F6E70; --cat-tra-bg:#E3F2F0; --cat-tra-bd:#C7E4E1;
+  --cat-adv-t:#5D4BBE; --cat-adv-bg:#EFEBFB; --cat-adv-bd:#DAD2F4;
+
+  /* DARK (chat) */
+  --chat-bg:#0F1217; --chat-surface:#1A1F27; --chat-surface-2:#232A34;
+  --chat-line:#2C333E; --chat-ink:#ECEEF1; --chat-ink-2:#A7AEB8; --chat-ink-3:#6B7480;
+  --user-bubble:#1F2630; --slip-card:#FFFFFF;
+  --chat-green:#1F9D57; --chat-green-hover:#178045;
+  --success-bg:#143524; --success-bd:#1F6E42; --success-tx:#7FE3AA;
+
+  /* TYPE */
+  --font:"LINE Seed Sans TH","IBM Plex Sans Thai","Noto Sans Thai","Anuphan",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-num:"IBM Plex Sans","Inter",ui-sans-serif,system-ui,sans-serif;
+
+  /* RADIUS */
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-bubble:18px; --r-pill:999px;
+
+  /* ELEVATION */
+  --e1:0 1px 2px rgba(21,24,30,.04),0 1px 1px rgba(21,24,30,.03);
+  --e2:0 2px 8px rgba(21,24,30,.06),0 1px 2px rgba(21,24,30,.04);
+  --e3:0 12px 32px rgba(21,24,30,.14);
+
+  /* MOTION */
+  --ease-out:cubic-bezier(.22,.61,.36,1);
+  --ease-inout:cubic-bezier(.4,0,.2,1);
+  --spring:cubic-bezier(.34,1.4,.64,1);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font);
+  background:#E6E4DD;
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  display:flex;align-items:flex-start;justify-content:center;
+  min-height:100vh;
+  padding:24px 12px;
+}
+.tnum{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- DEVICE FRAME ---------- */
+.device{
+  width:390px;max-width:100%;
+  background:var(--bg-canvas);
+  border-radius:34px;
+  box-shadow:0 30px 70px rgba(21,24,30,.30),0 2px 6px rgba(21,24,30,.12);
+  overflow:hidden;
+  position:relative;
+  border:1px solid rgba(0,0,0,.06);
+}
+.viewport{
+  height:780px;max-height:calc(100vh - 48px);
+  display:flex;flex-direction:column;
+  position:relative;
+}
+
+/* ---------- STATUS BAR (mock) ---------- */
+.statusbar{
+  height:44px;flex:0 0 44px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;font-size:13px;font-weight:600;color:var(--ink-3);
+  background:var(--surface);
+}
+.statusbar.dark{background:var(--chat-bg);color:var(--chat-ink-2)}
+.statusbar .time{font-family:var(--font-num);letter-spacing:-.01em}
+.sb-glyphs{display:flex;align-items:center;gap:6px}
+.sb-glyphs svg{display:block}
+
+/* ---------- APP HEADER ---------- */
+.appheader{
+  flex:0 0 auto;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:var(--surface);
+  border-bottom:1px solid var(--line);
+  box-shadow:var(--e2);position:relative;z-index:30;
+}
+.brandlock{display:flex;align-items:center;gap:9px}
+.mark{width:30px;height:30px;flex:0 0 30px}
+.wordmark{display:flex;flex-direction:column;line-height:1}
+.wordmark .t1{font-size:15px;font-weight:800;letter-spacing:.04em;color:var(--ink)}
+.wordmark .t2{font-size:8px;font-weight:500;letter-spacing:.32em;color:var(--ink-3);margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.proj-chip{
+  display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 11px;
+  background:var(--accent-tint);color:var(--accent);
+  font-size:13px;font-weight:600;border-radius:var(--r-pill);
+  border:none;cursor:pointer;white-space:nowrap;
+}
+.admin-cluster{display:flex;align-items:center;gap:6px}
+.avatar{
+  width:32px;height:32px;border-radius:50%;background:var(--brand-orange);
+  color:#fff;font-size:14px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex:0 0 32px;
+}
+.admin-label{font-size:12px;font-weight:500;color:var(--ink-3);white-space:nowrap}
+.logout{
+  height:32px;padding:0 10px;background:none;border:1px solid var(--line);
+  border-radius:var(--r-sm);font-family:var(--font);
+  font-size:12px;font-weight:600;color:var(--ink-3);cursor:pointer;white-space:nowrap;
+  transition:background .12s var(--ease-out);
+}
+.logout:active{background:var(--surface-2)}
+/* progressive header collapse: drop the admin label first, then the project chip,
+   well before the right cluster can clip against the rounded frame */
+@media (max-width:400px){.admin-label{display:none}}
+@media (max-width:359px){.proj-chip{display:none}}
+
+/* ---------- SEGMENTED SWITCHER ---------- */
+.switcher-strip{
+  flex:0 0 auto;background:var(--surface);padding:8px 16px 12px;
+  border-bottom:1px solid var(--line);position:relative;z-index:20;
+}
+.switcher-strip.dark{background:var(--chat-bg);border-bottom-color:var(--chat-line)}
+.segmented{
+  position:relative;display:grid;grid-template-columns:1fr 1fr 1fr;
+  background:var(--surface-2);border-radius:var(--r-sm);height:44px;padding:4px;
+}
+.switcher-strip.dark .segmented{background:var(--chat-surface)}
+.seg-thumb{
+  position:absolute;top:4px;left:4px;height:36px;width:calc((100% - 8px)/3);
+  background:var(--surface);border-radius:7px;box-shadow:var(--e2);
+  transition:transform .22s var(--ease-inout);z-index:1;
+}
+.switcher-strip.dark .seg-thumb{background:var(--chat-surface-2);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.seg-btn{
+  position:relative;z-index:2;background:none;border:none;cursor:pointer;
+  font-family:var(--font);font-size:13px;font-weight:600;color:var(--ink-3);
+  display:flex;align-items:center;justify-content:center;
+  transition:color .18s var(--ease-out);
+}
+.switcher-strip.dark .seg-btn{color:var(--chat-ink-3)}
+.seg-btn.active{color:var(--accent)}
+.switcher-strip.dark .seg-btn.active{color:var(--chat-ink)}
+
+/* ---------- SCREEN BODY ---------- */
+.body-scroll{
+  flex:1 1 auto;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;position:relative;
+}
+.body-scroll::-webkit-scrollbar{width:0;height:0}
+.screen{display:none;animation:fadeSlide .18s var(--ease-out)}
+.screen.show{display:block}
+.screen.slide-l{animation:fadeSlideL .18s var(--ease-out)}
+@keyframes fadeSlide{from{opacity:0;transform:translateX(8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes fadeSlideL{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.pad{padding:0 16px 24px}
+
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+/* ---------- BREADCRUMB ---------- */
+.breadcrumb{
+  height:32px;display:flex;align-items:center;gap:6px;
+  padding:0 16px;background:var(--surface-2);border-bottom:1px solid var(--line);
+  font-size:12px;font-weight:500;color:var(--ink-3);
+}
+.breadcrumb svg{flex:0 0 auto;opacity:.85}
+.breadcrumb .mid{opacity:.5;margin:0 1px}
+
+/* ---------- TITLE ROW ---------- */
+.titlerow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:20px;flex-wrap:wrap}
+.h1{font-size:22px;font-weight:700;line-height:1.35;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:7px}
+.title-pills{display:flex;gap:10px}
+.pill-btn{
+  height:40px;padding:0 14px;border:none;border-radius:var(--r-sm);
+  font-family:var(--font);font-size:14px;font-weight:700;color:#fff;cursor:pointer;
+  display:inline-flex;align-items:center;gap:5px;white-space:nowrap;
+  transition:transform .09s var(--ease-out),filter .12s var(--ease-out);
+}
+.pill-btn:active{transform:scale(.97)}
+.pill-green{background:var(--pos-btn)}.pill-green:active{background:var(--pos-btn-hover)}
+.pill-red{background:var(--neg-btn)}.pill-red:active{background:var(--neg-btn-hover)}
+@media (max-width:359px){
+  .title-pills{width:100%;margin-top:4px}
+  .title-pills .pill-btn{flex:1}
+}
+
+/* ---------- SECTIONS ---------- */
+.section{margin-top:24px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.h2{font-size:18px;font-weight:600;line-height:1.4;color:var(--ink);display:flex;align-items:center;gap:6px}
+
+/* ---------- SUMMARY GRID ---------- */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.card{
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);
+  box-shadow:var(--e1);position:relative;overflow:hidden;
+}
+.card.topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r-md) var(--r-md) 0 0}
+.bar-green::before{background:var(--pos-bar)}
+.bar-red::before{background:var(--neg-bar)}
+.bar-orange::before{background:var(--amber-bar)}
+.bar-blue::before{background:var(--accent)}
+.bar-graphite::before{background:var(--line-strong)}
+.card-inner{padding:16px}
+.card.loss{background:linear-gradient(0deg,var(--neg-tint),var(--neg-tint)),var(--surface);background-blend-mode:normal}
+.card.loss .card-inner{background:rgba(251,234,233,.55)}
+.card-label{font-size:13px;font-weight:500;color:var(--ink-3);display:flex;align-items:center;justify-content:space-between}
+.card-amount{font-size:24px;font-weight:800;line-height:1.2;letter-spacing:-.02em;color:var(--ink);margin-top:8px;display:flex;align-items:baseline;gap:1px}
+.card-amount.neg{color:var(--neg-text)}
+.card-amount.pos{color:var(--pos-text)}
+.loss-arrow{opacity:0;transition:opacity .25s var(--ease-out)}
+.loss-arrow.settled{opacity:1}
+.card-meta{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:6px}
+.baht{font-size:.78em;color:var(--ink-3);font-weight:700;margin-right:1px}
+.card-amount.neg .baht,.card-amount.pos .baht{color:var(--ink-3);opacity:.7}
+.count-unit{font-size:13px;font-weight:500;color:var(--ink-3);margin-left:5px;align-self:flex-end;padding-bottom:3px}
+.micro-icon{position:absolute;top:10px;right:12px;color:var(--amber);font-size:13px;line-height:1}
+
+/* ---------- FILTER PILLS ---------- */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;margin-top:4px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.fpill{
+  flex:0 0 auto;height:36px;padding:0 14px;border:none;border-radius:var(--r-pill);
+  background:var(--surface-2);color:var(--ink-3);font-family:var(--font);
+  font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  position:relative;transition:color .15s var(--ease-out),background .15s var(--ease-out);
+}
+.fpill.active{background:var(--accent-tint);color:var(--accent)}
+.fpill.active::after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:2px;background:var(--accent);border-radius:2px}
+
+/* ---------- TRANSACTION LIST ---------- */
+.date-subhead{font-size:12px;font-weight:700;color:var(--ink-3);padding:14px 2px 8px;font-family:var(--font-num)}
+.txlist{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--e1);overflow:hidden}
+.txrow{
+  min-height:64px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 0;
+  border-bottom:1px solid var(--line);position:relative;
+}
+.txrow:last-child{border-bottom:none}
+.tx-tick{width:4px;align-self:stretch;border-radius:0 3px 3px 0;flex:0 0 4px;margin-right:8px}
+.tick-mat{background:var(--cat-mat-t)}.tick-lab{background:var(--cat-lab-t)}.tick-tra{background:var(--cat-tra-t)}.tick-adv{background:var(--cat-adv-t)}
+.tx-left{flex:1 1 auto;min-width:0}
+.tx-date{font-size:12px;font-weight:500;color:var(--ink-3);font-family:var(--font-num)}
+.tx-title{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:1px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tx-loc{font-size:12px;font-weight:500;color:var(--ink-3)}
+.badge{
+  display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-xs);
+  font-size:11px;font-weight:600;letter-spacing:.02em;border:1px solid;white-space:nowrap;
+}
+.b-mat{color:var(--cat-mat-t);background:var(--cat-mat-bg);border-color:var(--cat-mat-bd)}
+.b-lab{color:var(--cat-lab-t);background:var(--cat-lab-bg);border-color:var(--cat-lab-bd)}
+.b-tra{color:var(--cat-tra-t);background:var(--cat-tra-bg);border-color:var(--cat-tra-bd)}
+.b-adv{color:var(--cat-adv-t);background:var(--cat-adv-bg);border-color:var(--cat-adv-bd)}
+.tx-right{flex:0 0 auto;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.tx-amount{font-size:16px;font-weight:600;line-height:1.3;color:var(--neg-text)}
+.tx-amount .baht{opacity:.75}
+.status-icon{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;white-space:nowrap}
+.st-paid{color:var(--pos-text)}
+.st-wht{color:var(--amber)}
+.st-pending{color:var(--ink-3)}
+
+/* ============================================================
+   SCREEN B — DARK CHAT
+   ============================================================ */
+.chat-wrap{background:var(--chat-bg);min-height:100%;display:flex;flex-direction:column}
+.chat-header{
+  display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:var(--chat-surface);box-shadow:var(--e2);position:sticky;top:0;z-index:5;
+}
+.chat-back{background:none;border:none;color:var(--chat-ink-2);cursor:pointer;display:flex;padding:4px;margin-left:-4px}
+.bot-avatar{
+  width:28px;height:28px;border-radius:8px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;position:relative;flex:0 0 28px;
+  box-shadow:0 0 0 2px var(--accent-ring);
+}
+.online-dot{position:absolute;right:-2px;bottom:-2px;width:9px;height:9px;border-radius:50%;background:var(--brand-green);border:2px solid var(--chat-surface)}
+.chat-id{display:flex;flex-direction:column;line-height:1.25}
+.chat-id .nm{font-size:15px;font-weight:600;color:var(--chat-ink)}
+.chat-id .sub{font-size:12px;font-weight:500;color:var(--chat-ink-2)}
+.chat-body{flex:1 1 auto;padding:16px 14px 8px;display:flex;flex-direction:column;gap:12px}
+.day-divider{align-self:center;background:var(--chat-surface-2);color:var(--chat-ink-2);font-size:11px;font-weight:600;padding:3px 12px;border-radius:var(--r-pill)}
+
+.msg{display:flex;flex-direction:column;max-width:78%;gap:4px}
+.msg.right{align-self:flex-end;align-items:flex-end}
+.msg.left{align-self:flex-start;align-items:flex-start}
+.msg-time{font-size:11px;font-weight:500;color:var(--chat-ink-2);font-family:var(--font-num);display:flex;align-items:center;gap:3px}
+.msg.right .msg-time{align-self:flex-end}
+
+/* user white slip */
+.slip{
+  background:var(--slip-card);border-radius:var(--r-sm);box-shadow:var(--e3);
+  width:268px;max-width:100%;overflow:hidden;position:relative;
+}
+.slip-perf{height:8px;background:
+   radial-gradient(circle at 6px 8px,transparent 0 4px,var(--slip-card) 4px) 0 0/12px 8px repeat-x,
+   var(--chat-bg);
+}
+.slip-pad{padding:12px 14px 14px}
+.slip-head{display:flex;align-items:center;gap:8px}
+.slip-logo{width:26px;height:26px;border-radius:6px;background:var(--pos-tint);display:flex;align-items:center;justify-content:center;color:var(--pos-text);flex:0 0 26px}
+.slip-merchant{font-size:13px;font-weight:700;color:var(--ink);flex:1 1 auto}
+.slip-ok{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:var(--pos-text);background:var(--pos-tint);border:1px solid var(--pos-border);padding:1px 7px;border-radius:var(--r-pill)}
+.slip-kv{margin-top:12px;display:grid;grid-template-columns:auto 1fr;gap:5px 10px;font-size:11.5px}
+.slip-kv .k{color:var(--ink-3);font-weight:500}
+.slip-kv .v{color:var(--ink-2);font-weight:600;text-align:right;font-family:var(--font-num);word-break:break-all}
+.slip-tear{border:none;border-top:.5px dashed var(--line-strong);margin:12px 0 10px}
+.slip-amount-row{display:flex;align-items:flex-end;justify-content:space-between}
+.slip-amt-k{font-size:12px;font-weight:500;color:var(--ink-3)}
+.slip-amt-v{font-size:15px;font-weight:800;color:var(--ink);font-family:var(--font-num)}
+.slip-fee{font-size:11.5px;color:var(--ink-3);font-weight:500;margin-top:4px;display:flex;justify-content:space-between}
+.slip-fee .v{font-family:var(--font-num)}
+.slip-qrwrap{display:flex;justify-content:flex-end;margin-top:10px}
+.qr{width:44px;height:44px;background:#fff;padding:2px;border-radius:4px}
+
+/* bot bubbles */
+.bubble{
+  background:var(--chat-surface);border:1px solid var(--chat-line);border-radius:var(--r-bubble);
+  padding:12px 14px;color:var(--chat-ink);font-size:14px;
+}
+.msg.left .bubble{border-top-left-radius:6px}
+.msg.right .bubble{background:var(--user-bubble);border-color:transparent;border-bottom-right-radius:6px}
+.receipt{position:relative;padding-left:16px}
+.receipt::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;background:var(--accent);border-radius:3px}
+.receipt-head{font-size:12px;font-weight:700;color:var(--chat-ink-2);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.receipt-dot{width:7px;height:7px;border-radius:50%;background:var(--brand-green)}
+.ok-tick{color:var(--brand-green)}
+.r-line{font-size:13px;font-weight:500;color:var(--chat-ink);display:flex;align-items:center;gap:7px;padding:3px 0}
+.r-line.amt{font-size:16px;font-weight:600;font-family:var(--font-num)}
+.r-baht{color:var(--brand-green);font-weight:700}
+.chat-actions{display:flex;gap:8px;margin-top:10px}
+.chat-actions.stack{flex-direction:column}
+.cbtn{
+  flex:1;min-height:44px;border:none;border-radius:var(--r-sm);background:var(--chat-green);
+  color:#fff;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.25;
+  padding:6px 10px;transition:transform .09s var(--ease-out),background .12s var(--ease-out);
+}
+.cbtn:active{transform:scale(.97);background:var(--chat-green-hover)}
+.cbtn .dim{font-size:11px;font-weight:500;opacity:.78}
+.prompt-bubble{font-size:14px;font-weight:600;color:var(--chat-ink)}
+.success{background:var(--success-bg);border:1px solid var(--success-bd);color:var(--success-tx);font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;border-radius:var(--r-bubble);border-top-left-radius:6px;padding:12px 14px}
+.success svg{flex:0 0 auto}
+.check-draw{stroke-dasharray:24;stroke-dashoffset:24;animation:draw .3s var(--ease-out) .1s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+
+/* chat input */
+.chat-input{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:10px 12px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  background:var(--chat-surface);border-top:1px solid var(--chat-line);
+}
+.ci-attach,.ci-send{width:36px;height:36px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 36px}
+.ci-attach{background:var(--chat-surface-2);color:var(--chat-ink-2)}
+.ci-field{flex:1 1 auto;height:38px;border-radius:var(--r-pill);background:var(--chat-surface-2);border:1px solid var(--chat-line);padding:0 14px;display:flex;align-items:center;font-size:13px;color:var(--chat-ink-3)}
+.ci-send{background:var(--accent);color:#fff}
+
+/* ============================================================
+   SCREEN C — GANTT
+   ============================================================ */
+.proj-card{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--e1);position:relative;overflow:hidden;margin-top:20px}
+.proj-card::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent)}
+.proj-card .inner{padding:16px}
+.proj-title{font-size:18px;font-weight:600;line-height:1.35;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.proj-meta{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.proj-meta .dnum{font-family:var(--font-num)}
+.proj-meta .days{font-weight:600;color:var(--ink-2)}
+.proj-meta .mid{opacity:.5}
+
+.tab-row{display:flex;gap:8px;overflow-x:auto;padding:4px 0;margin-top:16px;align-items:center;scrollbar-width:none}
+.tab-row::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;height:36px;padding:0 13px;border:none;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink-3);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;position:relative}
+.tab.active{background:var(--accent-tint);color:var(--accent)}
+.tab.active::after{content:"";position:absolute;left:13px;right:13px;bottom:4px;height:2px;background:var(--accent);border-radius:2px}
+.tab-excel{flex:0 0 auto;margin-left:auto;height:36px;padding:0 13px;border:none;border-radius:var(--r-sm);background:var(--pos-tint);color:var(--pos-text);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+.kpi{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--e1);position:relative;overflow:hidden;padding:14px 14px 14px 16px}
+.kpi::before{content:"";position:absolute;top:0;bottom:0;left:0;width:3px}
+.kpi.b-green::before{background:var(--pos-bar)}.kpi.b-red::before{background:var(--neg-bar)}.kpi.b-orange::before{background:var(--amber-bar)}.kpi.b-blue::before{background:var(--accent)}.kpi.b-graphite::before{background:var(--line-strong)}
+.kpi-label{font-size:13px;font-weight:500;color:var(--ink-3)}
+.kpi-val{font-size:26px;font-weight:800;line-height:1.1;letter-spacing:-.02em;margin-top:6px;font-family:var(--font-num);display:flex;align-items:baseline;gap:4px}
+.kpi-val.blue{color:var(--accent)}
+.kpi-val.ink{color:var(--ink)}
+.kpi-val.amber{color:var(--amber)}
+.kpi-val{align-items:flex-end}
+.kpi-unit{font-size:13px;font-weight:500;color:var(--ink-3);font-family:var(--font);letter-spacing:0;padding-bottom:2px}
+.kpi-meta{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:5px;font-family:var(--font-num)}
+.kpi-meta.thai{font-family:var(--font)}
+.behind-chip{display:inline-flex;align-items:center;gap:3px;margin-top:6px;font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--neg-text);background:var(--neg-tint);border:1px solid var(--neg-border);padding:2px 8px;border-radius:var(--r-xs)}
+.sliver{height:3px;border-radius:3px;background:var(--accent-border);margin-top:8px;overflow:hidden}
+.sliver > i{display:block;height:100%;background:var(--accent);width:24.4%;border-radius:3px}
+
+/* GANTT */
+.gantt-card{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--e1);overflow:hidden}
+.gantt-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 14px 10px}
+.gantt-head .h2{font-size:16px}
+.gctl{display:flex;align-items:center;gap:6px}
+.month-seg{display:inline-flex;background:var(--surface-2);border-radius:var(--r-sm);padding:3px;gap:2px}
+.mseg{border:none;background:none;font-family:var(--font-num);font-size:12px;font-weight:600;color:var(--ink-3);padding:4px 8px;border-radius:7px;cursor:pointer}
+.mseg.active{background:var(--ink);color:#fff}
+.today-jump{border:none;background:none;color:var(--accent);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px;padding:5px 6px;border-radius:var(--r-sm)}
+
+.gantt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;scrollbar-width:thin}
+.gantt-scroll::-webkit-scrollbar{height:6px}
+.gantt-scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
+.gantt-table{display:grid;min-width:560px;position:relative;
+  /* frozen cols: task | weight | actual | day-axis */
+}
+.gantt-grid-bg{position:absolute;inset:0;background-image:radial-gradient(var(--line-strong) .8px,transparent .8px);background-size:24px 24px;background-position:0 0;opacity:.45;pointer-events:none}
+.grow{display:grid;grid-template-columns:130px 44px 44px 1fr;align-items:stretch;border-bottom:1px solid var(--line);position:relative;z-index:1}
+.grow.head{border-bottom:1px solid var(--line-strong);background:var(--surface)}
+.gc{padding:8px 8px;display:flex;flex-direction:column;justify-content:center;min-height:46px}
+.gc.frozen{position:sticky;left:0;background:var(--surface);z-index:3;border-right:1px solid var(--line)}
+.gc.num{align-items:flex-end;text-align:right;position:sticky;z-index:2;background:var(--surface);border-right:1px solid var(--line)}
+.gc.wcol{left:130px}
+.gc.acol{left:174px;border-right:1px solid var(--line-strong)}
+.grow.head .gc{background:var(--surface);font-size:11px;font-weight:600;color:var(--ink-3)}
+.gc-task{font-size:14px;font-weight:600;color:var(--ink);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gc-range{font-size:11px;font-weight:500;color:var(--ink-3);font-family:var(--font-num);margin-top:2px}
+.gc-w{font-size:13px;font-weight:600;color:var(--ink-2);font-family:var(--font-num)}
+.gc-w.crit{font-weight:800;color:var(--ink)}
+.gc-a{font-size:13px;font-weight:600;color:var(--neg-text);font-family:var(--font-num)}
+
+/* day axis area */
+.daygrid{position:relative;display:flex;min-width:0}
+.dayhead{display:flex}
+.dcell{width:26px;flex:0 0 26px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ink-3);font-family:var(--font-num);border-left:1px dotted var(--line)}
+.dcell.today{color:var(--neg-text);font-weight:800}
+.dcell.past{opacity:.5}
+.lane{position:relative;height:46px;display:flex}
+.lane .slot{width:26px;flex:0 0 26px;border-left:1px dotted var(--line)}
+.lane .slot.todaywash{background:rgba(226,59,51,.06)}
+.lane .slot.past{background:rgba(0,0,0,.012)}
+/* today plumb line — sits BELOW frozen ledger columns (z 2/3) so it never bleeds over them */
+.today-line{position:absolute;top:0;bottom:0;width:0;border-left:2px dashed var(--neg-bar);z-index:1;animation:breathe 2s var(--ease-inout) infinite}
+@keyframes breathe{0%,100%{opacity:.6}50%{opacity:1}}
+.today-flag{position:absolute;top:-1px;transform:translateX(-50%);background:var(--neg-bar);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:0 0 6px 6px;white-space:nowrap;z-index:6}
+/* task bars */
+.bar{position:absolute;top:13px;height:20px;border-radius:var(--r-xs);display:flex;align-items:center;z-index:2}
+.bar.planned{background:var(--accent-tint);border:1px solid #2E7DD1}
+.bar.overdue{background:transparent;border:1.5px solid var(--neg-bar)}
+.bar .startdot{width:6px;height:6px;border-radius:2px;margin-left:3px}
+.bar.planned .startdot{background:var(--brand-blue)}
+.bar.overdue .startdot{background:var(--neg-bar)}
+
+.gantt-legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px 14px;border-top:1px solid var(--line)}
+.leg{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--ink-3)}
+.leg .sw{width:14px;height:10px;border-radius:3px;flex:0 0 14px}
+.leg .sw.plan{background:var(--accent-tint);border:1px solid #2E7DD1}
+.leg .sw.late{background:transparent;border:1.5px solid var(--neg-bar)}
+.leg .sw.today{width:0;height:14px;border-left:2px dashed var(--neg-bar);border-radius:0}
+.leg-verdict{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--neg-text);font-family:var(--font-num)}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.12s!important;animation-iteration-count:1!important;transition-duration:.12s!important}
+  .today-line{animation:none!important;opacity:.85}
+  .seg-thumb{transition:none!important}
+}
+
+/* focus */
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--accent-ring)}
+</style>
+</head>
+<body>
+<div class="device" role="group" aria-label="TONGJAI RENOVATE">
+  <div class="viewport">
+
+    <!-- STATUS BAR -->
+    <div class="statusbar" id="statusbar">
+      <span class="time">9:41</span>
+      <span class="sb-glyphs" aria-hidden="true">
+        <!-- signal -->
+        <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg>
+        <!-- wifi -->
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 11a1.6 1.6 0 1 0 0-3.2A1.6 1.6 0 0 0 8 11Zm0-5.2a4.6 4.6 0 0 1 3.3 1.4l1.4-1.5a6.7 6.7 0 0 0-9.4 0l1.4 1.5A4.6 4.6 0 0 1 8 5.8ZM8 .8a9.7 9.7 0 0 0-6.9 2.9L2.5 5A7.7 7.7 0 0 1 8 2.8 7.7 7.7 0 0 1 13.5 5l1.4-1.4A9.7 9.7 0 0 0 8 .8Z"/></svg>
+        <!-- battery -->
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="2" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+      </span>
+    </div>
+
+    <!-- APP HEADER (shared light chrome) -->
+    <header class="appheader">
+      <div class="brandlock">
+        <span class="mark" aria-hidden="true" id="markHost"></span>
+        <span class="wordmark"><span class="t1">TONGJAI</span><span class="t2">RENOVATE</span></span>
+      </div>
+      <div class="hdr-right">
+        <button class="proj-chip" type="button" aria-label="สลับโครงการ" onclick="sendPrompt&&sendPrompt('สลับโครงการ')">โครงการ
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <div class="admin-cluster">
+          <span class="avatar">ผ</span>
+          <span class="admin-label">ผู้ดูแลระบบ</span>
+        </div>
+        <button class="logout" type="button">ออกจากระบบ</button>
+      </div>
+    </header>
+
+    <!-- SEGMENTED SWITCHER -->
+    <div class="switcher-strip" id="switcherStrip">
+      <div class="segmented" role="tablist" aria-label="หน้าจอ">
+        <span class="seg-thumb" id="segThumb"></span>
+        <button class="seg-btn active" role="tab" id="segTab0" aria-controls="screenA" aria-selected="true" tabindex="0" data-i="0" onclick="go(0)">การเงิน</button>
+        <button class="seg-btn" role="tab" id="segTab1" aria-controls="screenB" aria-selected="false" tabindex="-1" data-i="1" onclick="go(1)">แชทบอท</button>
+        <button class="seg-btn" role="tab" id="segTab2" aria-controls="screenC" aria-selected="false" tabindex="-1" data-i="2" onclick="go(2)">แผนงาน</button>
+      </div>
+    </div>
+
+    <!-- BODY -->
+    <div class="body-scroll" id="bodyScroll">
+
+      <!-- ============ SCREEN A : FINANCE ============ -->
+      <section class="screen show" id="screenA" role="tabpanel" aria-labelledby="segTab0" tabindex="0">
+        <h2 class="sr-only">สรุปการเงินโครงการ: รายจ่ายสุทธิ 141,520.60 บาท ขาดทุน</h2>
+
+        <div class="breadcrumb">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 12L12 1M3.5 12V9.5M6 12V8M8.5 12V10.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span>คลิกชื่องาน = ไปวันเริ่มงาน</span><span class="mid">·</span><span>คลิกช่องวัน = บันทึก</span>
+        </div>
+
+        <div class="pad">
+          <div class="titlerow">
+            <h1 class="h1">💰 การเงินโครงการ</h1>
+            <div class="title-pills">
+              <button class="pill-btn pill-green" onclick="sendPrompt&&sendPrompt('เพิ่มรายรับ')">+ รายรับ</button>
+              <button class="pill-btn pill-red" onclick="sendPrompt&&sendPrompt('เพิ่มรายจ่าย')">+ รายจ่าย</button>
+            </div>
+          </div>
+
+          <!-- SUMMARY GRID -->
+          <div class="summary-grid">
+            <div class="card topbar bar-green">
+              <div class="card-inner">
+                <div class="card-label">รายรับสุทธิ</div>
+                <div class="card-amount tnum"><span class="baht">฿</span><span data-count="0" data-dec="2">0.00</span></div>
+                <div class="card-meta">หลังหักภาษี</div>
+              </div>
+            </div>
+            <div class="card topbar bar-red">
+              <div class="card-inner">
+                <div class="card-label">รายจ่ายสุทธิ</div>
+                <div class="card-amount neg tnum"><span class="baht">฿</span><span data-count="141520.60" data-dec="2">141,520.60</span></div>
+                <div class="card-meta">หลังหัก ณ ที่จ่าย</div>
+              </div>
+            </div>
+            <div class="card topbar bar-red loss">
+              <div class="card-inner">
+                <div class="card-label">กำไร / ขาดทุน</div>
+                <div class="card-amount neg tnum"><span class="loss-arrow" aria-hidden="true">▼</span> <span class="baht">-฿</span><span data-count="-141520.60" data-dec="2" data-signed="1">141,520.60</span></div>
+                <div class="card-meta">รายรับ − รายจ่าย</div>
+              </div>
+            </div>
+            <div class="card topbar bar-orange">
+              <span class="micro-icon" aria-hidden="true">📊</span>
+              <div class="card-inner">
+                <div class="card-label">รายการทั้งหมด</div>
+                <div class="card-amount tnum"><span data-count="25" data-dec="0">25</span><span class="count-unit">รายการ</span></div>
+                <div class="card-meta">ทั้งรายรับและรายจ่าย</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FILTER PILLS -->
+          <div class="filter-row" role="group" aria-label="ตัวกรองรายการ">
+            <button class="fpill active" type="button" aria-pressed="true"><span aria-hidden="true">📋</span> ทั้งหมด</button>
+            <button class="fpill" type="button" aria-pressed="false"><span aria-hidden="true">💚</span> รายรับ</button>
+            <button class="fpill" type="button" aria-pressed="false"><span aria-hidden="true">🔴</span> รายจ่าย</button>
+            <button class="fpill" type="button" aria-pressed="false"><span aria-hidden="true">📊</span> สรุปภาษี</button>
+          </div>
+
+          <!-- TRANSACTIONS -->
+          <div class="date-subhead">2026-06-11</div>
+          <div class="txlist">
+            <!-- row template: tick / left / right -->
+            <div class="txrow">
+              <span class="tx-tick tick-mat"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">ซื้อของสำหรับใช้หน้างาน <span class="badge b-mat">ค่าของ</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>1,500.00</div>
+                <span class="status-icon st-paid"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" fill="#E7F4EC"/><path d="M4 6.6l1.8 1.8L9 4.8" stroke="#18753F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>จ่ายแล้ว</span>
+              </div>
+            </div>
+
+            <div class="txrow">
+              <span class="tx-tick tick-mat"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">ซื้อทรายสำหรับใช้หน้างาน <span class="badge b-mat">ค่าของ</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>1,000.00</div>
+                <span class="status-icon st-paid"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" fill="#E7F4EC"/><path d="M4 6.6l1.8 1.8L9 4.8" stroke="#18753F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>จ่ายแล้ว</span>
+              </div>
+            </div>
+
+            <div class="txrow">
+              <span class="tx-tick tick-lab"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">ค่าแรงเชื่อมเหล็ก <span class="badge b-lab">ค่าแรงช่าง</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>5,000.00</div>
+                <span class="status-icon st-wht"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.6" stroke="#9C520B" stroke-width="1.2"/><path d="M6.5 3.5V6.7l2 1.2" stroke="#9C520B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>หัก ณ ที่จ่าย</span>
+              </div>
+            </div>
+
+            <div class="txrow">
+              <span class="tx-tick tick-mat"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">ค่าปูนซีเมนต์ <span class="badge b-mat">ค่าของ</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>2,400.00</div>
+                <span class="status-icon st-paid"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" fill="#E7F4EC"/><path d="M4 6.6l1.8 1.8L9 4.8" stroke="#18753F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>จ่ายแล้ว</span>
+              </div>
+            </div>
+
+            <div class="txrow">
+              <span class="tx-tick tick-tra"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">ค่าขนส่งวัสดุ <span class="badge b-tra">ค่าขนส่ง</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>1,800.00</div>
+                <span class="status-icon st-paid"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" fill="#E7F4EC"/><path d="M4 6.6l1.8 1.8L9 4.8" stroke="#18753F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>จ่ายแล้ว</span>
+              </div>
+            </div>
+
+            <div class="txrow">
+              <span class="tx-tick tick-adv"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">เบิกล่วงหน้าค่าแรง <span class="badge b-adv">เบิกล่วงหน้า</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>8,000.00</div>
+                <span class="status-icon st-wht"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.6" stroke="#9C520B" stroke-width="1.2"/><path d="M6.5 3.5V6.7l2 1.2" stroke="#9C520B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>หัก ณ ที่จ่าย</span>
+              </div>
+            </div>
+
+            <div class="txrow">
+              <span class="tx-tick tick-mat"></span>
+              <div class="tx-left">
+                <div class="tx-date tnum">2026-06-11</div>
+                <div class="tx-title">ค่าเช่านั่งร้าน <span class="badge b-mat">ค่าของ</span></div>
+                <div class="tx-loc">· สฟ.คลองแงะ</div>
+              </div>
+              <div class="tx-right">
+                <div class="tx-amount tnum"><span class="baht">−฿</span>3,200.00</div>
+                <span class="status-icon st-pending"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.6" stroke="#9AA0A8" stroke-width="1.2"/><path d="M6.5 3.6V6.7l2 1.2" stroke="#646B75" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>รอจ่าย</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SCREEN B : CHAT ============ -->
+      <section class="screen" id="screenB" role="tabpanel" aria-labelledby="segTab1" tabindex="0">
+        <h2 class="sr-only">แชทบอท NONEAICE สำหรับบันทึกใบเสร็จและค่าใช้จ่าย</h2>
+        <div class="chat-wrap">
+          <div class="chat-header">
+            <button class="chat-back" aria-label="ย้อนกลับ" onclick="go(0)"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M12 4l-6 6 6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <span class="bot-avatar" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="5" width="12" height="9" rx="2.5" fill="#fff"/><circle cx="5.5" cy="9.2" r="1.2" fill="#1E5FCC"/><circle cx="10.5" cy="9.2" r="1.2" fill="#1E5FCC"/><path d="M8 2v2.2M8 1.4a.9.9 0 1 0 0 .1Z" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><circle cx="8" cy="1.6" r="1" fill="#fff"/></svg>
+              <span class="online-dot"></span>
+            </span>
+            <span class="chat-id"><span class="nm">NONEAICE</span><span class="sub">บอทบันทึกใบเสร็จ · ออนไลน์</span></span>
+          </div>
+
+          <div class="chat-body">
+            <div class="day-divider">วันนี้</div>
+
+            <!-- USER SLIP -->
+            <div class="msg right">
+              <div class="slip">
+                <div class="slip-perf"></div>
+                <div class="slip-pad">
+                  <div class="slip-head">
+                    <span class="slip-logo">☕</span>
+                    <span class="slip-merchant">Starbucks Coffee</span>
+                    <span class="slip-ok">✓ โอนเงินสำเร็จ</span>
+                  </div>
+                  <div class="slip-kv">
+                    <span class="k">บัญชี</span><span class="v">000002213438161</span>
+                    <span class="k">อ้างอิง</span><span class="v">47845792ZUMQTD000000</span>
+                    <span class="k">เลขที่รายการ</span><span class="v">016166110142CPM13108</span>
+                  </div>
+                  <hr class="slip-tear">
+                  <div class="slip-amount-row">
+                    <span class="slip-amt-k">จำนวน</span>
+                    <span class="slip-amt-v">300.00 บาท</span>
+                  </div>
+                  <div class="slip-fee"><span>ค่าธรรมเนียม</span><span class="v">0.00 บาท</span></div>
+                  <div class="slip-qrwrap"><span class="qr" id="qrHost" aria-hidden="true"></span></div>
+                </div>
+              </div>
+              <span class="msg-time">12:04 <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5.2l2.4 2.4L8 3M6 5.2l2.4 2.4L13 3" stroke="#1E5FCC" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            </div>
+
+            <!-- BOT PARSED RECEIPT -->
+            <div class="msg left">
+              <div class="bubble receipt">
+                <div class="receipt-head"><span class="receipt-dot"></span>ใบเสร็จ <span class="ok-tick">✓</span></div>
+                <div class="r-line amt">💰 <span><span class="r-baht">฿</span>300.00</span></div>
+                <div class="r-line">📝 ชำระค่าบริการ</div>
+                <div class="r-line">🏢 Starbucks Coffee</div>
+                <div class="r-line tnum">📅 2026-06-15</div>
+                <div class="chat-actions">
+                  <button class="cbtn" onclick="sendPrompt&&sendPrompt('บุคคล')">👤 บุคคล</button>
+                  <button class="cbtn" onclick="sendPrompt&&sendPrompt('บริษัท')">🏢 บริษัท</button>
+                </div>
+              </div>
+              <span class="msg-time">12:05</span>
+            </div>
+
+            <!-- BOT PROMPT -->
+            <div class="msg left">
+              <div class="bubble">
+                <div class="prompt-bubble">เลือกประเภทค่าจ่าย:</div>
+                <div class="chat-actions stack">
+                  <button class="cbtn" onclick="sendPrompt&&sendPrompt('ค่าของ')">📦 ค่าของ<span class="dim">(บันทึกเป็นรายจ่าย)</span></button>
+                  <button class="cbtn" onclick="sendPrompt&&sendPrompt('ค่าแรง')">💼 ค่าแรง<span class="dim">(หัก ณ ที่จ่าย)</span></button>
+                </div>
+              </div>
+              <span class="msg-time">12:05</span>
+            </div>
+
+            <!-- SUCCESS -->
+            <div class="msg left">
+              <div class="success">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#1F6E42" stroke-width="1.4"/><path class="check-draw" d="M5.2 9.3l2.4 2.4L12.8 6.2" stroke="#7FE3AA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                ✅ บันทึกเป็นใบรับรองแทนแล้วครับ
+              </div>
+              <span class="msg-time">12:06</span>
+            </div>
+          </div>
+
+          <div class="chat-input">
+            <button class="ci-attach" aria-label="แนบไฟล์"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 4v10M4 9h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+            <div class="ci-field">พิมพ์ข้อความ หรือส่งสลิป…</div>
+            <button class="ci-send" aria-label="ส่ง"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l12-5-5 12-2.2-4.8L2 8Z" fill="currentColor"/></svg></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ SCREEN C : GANTT ============ -->
+      <section class="screen" id="screenC" role="tabpanel" aria-labelledby="segTab2" tabindex="0">
+        <h2 class="sr-only">แผนงานโครงการ Scania HDY: แผนสะสม 24.4% จริงสะสม 0% ล่าช้า</h2>
+        <div class="pad">
+          <div class="proj-card">
+            <div class="inner">
+              <div class="proj-title">Scania HDY — ปรับปรุงอาคารและระบบระบายน้ำหลังคา</div>
+              <div class="proj-meta">
+                <span>📍 Scania · หาดใหญ่</span><span class="mid">·</span>
+                <span class="dnum">2026-06-01 → 2026-07-22</span><span class="mid">·</span>
+                <span class="days dnum">45 วัน</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-row" role="group" aria-label="มุมมองแผนงาน">
+            <button class="tab active" type="button" aria-pressed="true"><span aria-hidden="true">📊</span> แผนงาน</button>
+            <button class="tab" type="button" aria-pressed="false"><span aria-hidden="true">📈</span> ความก้าวหน้า</button>
+            <button class="tab" type="button" aria-pressed="false"><span aria-hidden="true">🗺</span> รายงาน</button>
+            <button class="tab-excel" type="button"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><rect x="1.5" y="1" width="10" height="11" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M4.5 4l4 5M8.5 4l-4 5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg> Excel</button>
+          </div>
+
+          <!-- KPI GRID -->
+          <div class="kpi-grid">
+            <div class="kpi b-blue">
+              <div class="kpi-label">แผนสะสม</div>
+              <div class="kpi-val blue">24.4<span class="kpi-unit">%</span></div>
+              <div class="kpi-meta thai">ณ วันนี้</div>
+              <div class="sliver"><i></i></div>
+            </div>
+            <div class="kpi b-red">
+              <div class="kpi-label">จริงสะสม</div>
+              <div class="kpi-val ink">0<span class="kpi-unit">%</span></div>
+              <div class="behind-chip">▼ ล่าช้า</div>
+            </div>
+            <div class="kpi b-orange">
+              <div class="kpi-label">จำนวนงาน</div>
+              <div class="kpi-val amber">13<span class="kpi-unit">รายการ</span></div>
+              <div class="kpi-meta thai">🗂 ทั้งโครงการ</div>
+            </div>
+            <div class="kpi b-graphite">
+              <div class="kpi-label">ระยะเวลา</div>
+              <div class="kpi-val ink">45<span class="kpi-unit">วัน</span></div>
+              <div class="kpi-meta">ตั้งแต่ 2026-06-01</div>
+            </div>
+          </div>
+
+          <!-- GANTT -->
+          <div class="section">
+            <div class="gantt-card">
+              <div class="gantt-head">
+                <div class="h2">📊 ตาราง Gantt แผนงาน</div>
+                <div class="gctl">
+                  <div class="month-seg" role="group" aria-label="เลือกเดือน"><button class="mseg active" type="button" aria-pressed="true" aria-label="มิถุนายน 2026">6/26</button><button class="mseg" type="button" aria-pressed="false" aria-label="กรกฎาคม 2026">7/26</button></div>
+                  <button class="today-jump" type="button" onclick="scrollToday()"><span aria-hidden="true">📍</span> วันนี้</button>
+                </div>
+              </div>
+              <div class="gantt-scroll" id="ganttScroll">
+                <div class="gantt-table" id="ganttTable">
+                  <!-- built by JS -->
+                </div>
+              </div>
+              <div class="gantt-legend">
+                <span class="leg"><span class="sw plan"></span>วางแผน</span>
+                <span class="leg"><span class="sw late"></span>ล่าช้า / ยังไม่ทำ</span>
+                <span class="leg"><span class="sw today"></span>วันนี้ (17)</span>
+                <span class="leg-verdict">จริง 0% · ล่าช้า</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div><!-- /body-scroll -->
+  </div><!-- /viewport -->
+</div><!-- /device -->
+
+<script>
+/* ---------- sendPrompt fallback (host may override) ---------- */
+window.sendPrompt = window.sendPrompt || function(t){ /* host integration hook */ };
+
+/* ---------- PINWHEEL MARK ---------- */
+function pinwheel(size){
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 30 30" role="img" aria-label="โลโก้ TONGJAI">'
+    +'<g transform="rotate(45 15 15)">'
+    +'<rect x="5.2" y="5.2" width="9" height="9" rx="2.4" fill="#E23B33"/>'
+    +'<rect x="15.8" y="5.2" width="9" height="9" rx="2.4" fill="#2667D6"/>'
+    +'<rect x="5.2" y="15.8" width="9" height="9" rx="2.4" fill="#2FA45A"/>'
+    +'<rect x="15.8" y="15.8" width="9" height="9" rx="2.4" fill="#F08A24"/>'
+    +'</g></svg>';
+}
+document.getElementById('markHost').innerHTML = pinwheel(30);
+
+/* ---------- FAUX QR (deterministic, 3 finder eyes) ---------- */
+function buildQR(){
+  var N=11, cells=[];
+  // deterministic pseudo-random
+  function rnd(i){ var x=Math.sin(i*97.13+0.5)*10000; return (x-Math.floor(x))>0.5; }
+  function isFinder(r,c){
+    var inEye=function(r0,c0){ return r>=r0&&r<r0+3&&c>=c0&&c<c0+3; };
+    return inEye(0,0)||inEye(0,N-3)||inEye(N-3,0);
+  }
+  function isFinderRing(r,c){
+    // we draw finder eyes separately; treat their 3x3 footprint as reserved
+    var inEye=function(r0,c0){ return r>=r0-1&&r<r0+4&&c>=c0-1&&c<c0+4; };
+    return inEye(0,0)||inEye(0,N-3)||inEye(N-3,0);
+  }
+  var svg='<svg width="40" height="40" viewBox="0 0 11 11" shape-rendering="crispEdges">';
+  svg+='<rect width="11" height="11" fill="#fff"/>';
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    if(isFinderRing(r,c)) continue;
+    if(rnd(r*N+c)) svg+='<rect x="'+c+'" y="'+r+'" width="1" height="1" fill="#15181E"/>';
+  }
+  // three finder eyes
+  function eye(x,y){
+    return '<rect x="'+x+'" y="'+y+'" width="3" height="3" fill="#15181E"/>'
+         +'<rect x="'+(x+0.6)+'" y="'+(y+0.6)+'" width="1.8" height="1.8" fill="#fff"/>'
+         +'<rect x="'+(x+1.1)+'" y="'+(y+1.1)+'" width="0.8" height="0.8" fill="#15181E"/>';
+  }
+  svg+=eye(0,0)+eye(N-3,0)+eye(0,N-3);
+  svg+='</svg>';
+  return svg;
+}
+document.getElementById('qrHost').innerHTML = buildQR();
+
+/* ---------- SEGMENTED SWITCHER ---------- */
+var current=0;
+var screens=['screenA','screenB','screenC'];
+function go(i){
+  if(i===current) return;
+  var dir = i>current ? '' : 'slide-l';
+  current=i;
+  document.getElementById('segThumb').style.transform='translateX('+(i*100)+'%)';
+  document.querySelectorAll('.seg-btn').forEach(function(b){
+    var on=(+b.dataset.i===i);
+    b.classList.toggle('active',on);
+    b.setAttribute('aria-selected',on?'true':'false');
+    b.tabIndex=on?0:-1; // roving tabindex
+  });
+  screens.forEach(function(id,idx){
+    var el=document.getElementById(id);
+    el.classList.remove('show','slide-l');
+    if(idx===i){ el.classList.add('show'); if(dir) el.classList.add('slide-l'); }
+  });
+  // dark chrome for chat
+  var dark = (i===1);
+  document.getElementById('statusbar').classList.toggle('dark',dark);
+  document.getElementById('switcherStrip').classList.toggle('dark',dark);
+  document.getElementById('bodyScroll').scrollTop=0;
+  if(i===2) setTimeout(scrollToday,60);
+  if(i===0) countUp();
+}
+
+/* roving arrow-key navigation for the segmented tablist (WCAG 2.1.1) */
+(function(){
+  var tabs=Array.prototype.slice.call(document.querySelectorAll('.segmented .seg-btn'));
+  document.querySelector('.segmented').addEventListener('keydown',function(e){
+    var idx=tabs.indexOf(document.activeElement); if(idx<0) return;
+    var n=null;
+    if(e.key==='ArrowRight'||e.key==='ArrowDown') n=(idx+1)%tabs.length;
+    else if(e.key==='ArrowLeft'||e.key==='ArrowUp') n=(idx-1+tabs.length)%tabs.length;
+    else if(e.key==='Home') n=0;
+    else if(e.key==='End') n=tabs.length-1;
+    if(n===null) return;
+    e.preventDefault(); go(n); tabs[n].focus();
+  });
+})();
+
+/* ---------- COUNT-UP (reduced-motion safe) ---------- */
+var counted=false;
+function fmt(n,dec){
+  var neg=n<0; n=Math.abs(n);
+  var s=n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return s;
+}
+function revealLossArrow(){
+  document.querySelectorAll('#screenA .loss-arrow').forEach(function(a){ a.classList.add('settled'); });
+}
+function countUp(){
+  if(counted) return; counted=true;
+  var reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(reduce) revealLossArrow();
+  // safety net: the ▼ is meaning-bearing (triple-coded loss), so guarantee it reveals
+  // even if rAF is throttled (e.g. a backgrounded tab) and never settles the tween.
+  else setTimeout(revealLossArrow,700);
+  document.querySelectorAll('#screenA [data-count]').forEach(function(el){
+    var target=parseFloat(el.dataset.count), dec=+el.dataset.dec;
+    // signed figures (loss) tween down toward the negative target; ▼ reveals on settle
+    var signed=el.dataset.signed==='1';
+    if(reduce){ el.textContent=fmt(target,dec); return; }
+    var start=performance.now(), dur=420, from=0;
+    function step(t){
+      var p=Math.min(1,(t-start)/dur);
+      var e=1-Math.pow(1-p,3);
+      el.textContent=fmt(from+(target-from)*e,dec);
+      if(p<1){ requestAnimationFrame(step); }
+      else if(signed){ revealLossArrow(); }
+    }
+    requestAnimationFrame(step);
+  });
+}
+countUp();
+
+/* ---------- GANTT BUILD ---------- */
+(function(){
+  var DAYS=[14,15,16,17,18,19,20,21,22]; // visible window
+  var TODAY=17;
+  var DAYW=26;
+  var tasks=[
+    {name:'Scania Building', range:'06-08 → 06-12', w:'5.00', crit:false, s:14, e:15},
+    {name:'Scania Building', range:'06-09 → 06-10', w:'3.00', crit:false, s:15, e:16},
+    {name:'Scania Roof Drain', range:'06-14 → 06-20', w:'12.00', crit:true, s:14, e:20},
+    {name:'Scania Building', range:'06-12 → 06-18', w:'8.00', crit:false, s:17, e:19},
+    {name:'Scania Roof Drain', range:'06-13 → 06-17', w:'6.00', crit:false, s:16, e:21},
+    {name:'Scania Electrical', range:'06-15 → 06-20', w:'4.00', crit:false, s:18, e:22},
+    {name:'Scania Building', range:'06-16 → 06-22', w:'7.00', crit:false, s:19, e:22}
+  ];
+  var axisW=DAYS.length*DAYW;
+  var t=document.getElementById('ganttTable');
+  var html='';
+  // dotted blueprint grid behind
+  html+='<div class="gantt-grid-bg"></div>';
+  // HEAD row
+  html+='<div class="grow head">'
+      + '<div class="gc frozen">รายการงาน</div>'
+      + '<div class="gc num wcol">น้ำหนัก</div>'
+      + '<div class="gc num acol">%จริง</div>'
+      + '<div class="gc daygrid" style="position:relative;padding:0">'
+        + '<div class="dayhead">';
+  DAYS.forEach(function(d){
+    var cls='dcell'+(d===TODAY?' today':'')+(d<TODAY?' past':'');
+    html+='<span class="'+cls+'">'+d+'</span>';
+  });
+  html+='</div></div></div>';
+
+  // TASK rows
+  tasks.forEach(function(tk){
+    html+='<div class="grow">'
+        + '<div class="gc frozen">'
+          + '<div class="gc-task">'+tk.name+'</div>'
+          + '<div class="gc-range">'+tk.range+'</div>'
+        + '</div>'
+        + '<div class="gc num wcol"><span class="gc-w'+(tk.crit?' crit':'')+'">'+tk.w+'</span></div>'
+        + '<div class="gc num acol"><span class="gc-a">0.00</span></div>'
+        + '<div class="gc daygrid" style="padding:0">';
+    // lane with day slots
+    html+='<div class="lane" style="width:'+axisW+'px">';
+    DAYS.forEach(function(d){
+      var cls='slot'+(d===TODAY?' todaywash':'')+(d<TODAY?' past':'');
+      html+='<span class="'+cls+'"></span>';
+    });
+    // bar(s): split at today. Segment left of today = overdue(hollow red), at/after = planned(blue)
+    var s=tk.s, e=tk.e;
+    function px(day){ return (day-DAYS[0])*DAYW; }
+    // overdue segment: days strictly before today
+    if(s<TODAY){
+      var oe=Math.min(e,TODAY-1);
+      var x=px(s), w=(oe-s+1)*DAYW;
+      html+='<div class="bar overdue" style="left:'+(x+2)+'px;width:'+(w-4)+'px"><span class="startdot"></span></div>';
+    }
+    // planned segment: today and after
+    if(e>=TODAY){
+      var ps=Math.max(s,TODAY);
+      var x2=px(ps), w2=(e-ps+1)*DAYW;
+      html+='<div class="bar planned" style="left:'+(x2+2)+'px;width:'+(w2-4)+'px">'+(s>=TODAY?'<span class="startdot"></span>':'')+'</div>';
+    }
+    html+='</div></div></div>';
+  });
+
+  t.innerHTML=html;
+
+  // today plumb line over lanes — aligned to the LEFT edge of the today cell so that
+  // every blue 'planned' bar sits fully right of it and every hollow-red 'overdue' bar
+  // sits fully left of it (the load-bearing "left of today = behind" read).
+  var frozenW=130+44+44; // task+weight+actual
+  var lineX=(TODAY-DAYS[0])*DAYW;
+  var line=document.createElement('div');
+  line.className='today-line';
+  line.style.left=(frozenW+lineX)+'px';
+  line.innerHTML='<span class="today-flag">วันนี้</span>';
+  t.appendChild(line);
+})();
+
+function scrollToday(){
+  var sc=document.getElementById('ganttScroll');
+  if(!sc) return;
+  var frozenW=130+44+44, DAYW=26, TODAY=17, first=14;
+  var target=frozenW+(TODAY-first)*DAYW - (sc.clientWidth-frozenW)/2;
+  sc.scrollTo({left:Math.max(0,target),behavior:'smooth'});
+}
+</script>
+</body>
+</html>
