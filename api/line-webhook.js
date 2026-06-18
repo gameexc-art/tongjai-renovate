@@ -4,7 +4,7 @@
 // (project: tongjai-renovate). Runs as a Vercel Node serverless function.
 //
 // Flow:
-//   image message  → download slip → Claude vision OCR → Flex "ใบเสร็จ" card
+//   image message  → download slip → Groq vision OCR → Flex "ใบเสร็จ" card
 //                    + step-1 buttons (👤 บุคคล / 🏢 บริษัท)
 //   postback s=1   → step-2 buttons (📦 ค่าของ / 💼 ค่าแรง)
 //   postback s=2   → persist ledger (KV if set) → "✅ บันทึกเป็นใบรับรองแทนแล้วครับ"
@@ -39,7 +39,7 @@ import {
   decodeState,
 } from "./_lib/flex.js";
 
-// Hobby max is 300s; a synchronous Claude vision call fits comfortably.
+// Hobby max is 300s; a synchronous Groq vision call fits comfortably.
 export const config = { maxDuration: 60 };
 
 // In-memory dedupe of webhookEventIds. Instances are reused under Fluid compute

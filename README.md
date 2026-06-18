@@ -23,7 +23,7 @@ Screen B's NONEAICE chat is backed by a **real LINE Messaging API bot**, shipped
 Vercel serverless functions in this same repo (under `/api`). Send a bank-transfer
 slip / receipt image to the LINE Official Account and the bot:
 
-1. downloads the image, OCRs it with **Claude vision** (amount, payee, date, ref),
+1. downloads the image, OCRs it with **Groq vision** (amount, payee, date, ref),
 2. replies with a polished Flex **"ใบเสร็จ"** card,
 3. walks you through two postback choices — **👤 บุคคล / 🏢 บริษัท**, then
    **📦 ค่าของ (บันทึกเป็นรายจ่าย) / 💼 ค่าแรง (หัก ณ ที่จ่าย)**,
@@ -65,9 +65,9 @@ look (summary cards, filter pills, ledger rows).
 |---|---|---|
 | `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE reply/push/content auth |
 | `LINE_CHANNEL_SECRET` | ✅ | verify `x-line-signature` |
-| `ANTHROPIC_API_KEY` | ✅ | Claude vision OCR |
+| `GROQ_API_KEY` | ✅ | Groq vision OCR |
 | `DASHBOARD_TOKEN` | required to read ledger | shared secret for `GET /api/transactions` (`Authorization: Bearer …`). Until set, that endpoint returns `503` (fails closed, never open) |
-| `PARSE_MODEL` | optional | override model (default `claude-haiku-4-5-20251001`) |
+| `PARSE_MODEL` | optional | override model (default `meta-llama/llama-4-scout-17b-16e-instruct`) |
 | `DASHBOARD_ORIGIN` | optional | exact origin allowed to read `/api/transactions` from a browser (CORS). Omit for same-origin only — never `*` |
 | `KV_REST_API_URL` | optional | Vercel KV — persist ledger for the dashboard |
 | `KV_REST_API_TOKEN` | optional | Vercel KV token |

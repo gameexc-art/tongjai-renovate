@@ -1,23 +1,25 @@
 // api/_lib/ocr.js
 //
-// Slip / receipt OCR via the Anthropic (Claude) vision API — no SDK, just fetch.
-// POST https://api.anthropic.com/v1/messages
-//   headers: x-api-key, anthropic-version: 2023-06-01, content-type: application/json
-//   body: { model, max_tokens, messages:[{role:"user", content:[image, text]}] }
+// Slip / receipt OCR via Groq's vision API (OpenAI-compatible) — no SDK, just fetch.
+// POST https://api.groq.com/openai/v1/chat/completions
+//   headers: Authorization: Bearer <GROQ_API_KEY>, content-type: application/json
+//   body: { model, messages:[{role:"user", content:[
+//            {type:"text", text}, {type:"image_url", image_url:{url:"data:<mime>;base64,<b64>"}}
+//          ]}], response_format:{type:"json_object"} }
+//   response: choices[0].message.content (a JSON string)
 //
-// Default model is claude-haiku-4-5-20251001 (fast/cheap, multimodal). Override
-// with env PARSE_MODEL (e.g. "claude-sonnet-4-6") for higher accuracy — no code change.
+// Default model meta-llama/llama-4-scout-17b-16e-instruct (free, multimodal vision).
+// Override with env PARSE_MODEL (e.g. "qwen/qwen3.6-27b") for a different model — no code change.
 
-const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
-const DEFAULT_MODEL = "claude-haiku-4-5-20251001";
-const ANTHROPIC_VERSION = "2023-06-01";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const DEFAULT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
 // Hard cap on the OCR round-trip. The LINE reply token lives ~60s; keeping OCR
 // well under that leaves room to still reply (or push) the graceful error within
 // the window instead of letting a hung call ride up to maxDuration and miss both.
 const OCR_TIMEOUT_MS = 20000;
 
-// Anthropic supports only these image media types. Anything else → default jpeg.
+// Groq vision accepts the common web image types; anything else → default jpeg.
 const ALLOWED_MEDIA = new Set([
   "image/jpeg",
   "image/png",
@@ -39,57 +41,54 @@ const PROMPT = [
 ].join("\n");
 
 /**
- * Run the Anthropic vision OCR and return a normalized, validated record.
+ * Run the Groq vision OCR and return a normalized, validated record.
  *
  * @param {Buffer} buffer       raw image bytes
  * @param {string} contentType  actual media type from LINE (e.g. image/png)
- * @param {object} env          { ANTHROPIC_API_KEY, PARSE_MODEL? }
+ * @param {object} env          { GROQ_API_KEY, PARSE_MODEL? }
  * @returns {Promise<{ok:boolean, data?:object, error?:string}>}
  *   data = { amount, currency, merchant, date, ref, rawText }
  */
 export async function parseSlip(buffer, contentType, env) {
-  const apiKey = env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { ok: false, error: "missing ANTHROPIC_API_KEY" };
+  const apiKey = env.GROQ_API_KEY;
+  if (!apiKey) return { ok: false, error: "missing GROQ_API_KEY" };
 
-  // 10 MB is the Anthropic per-image cap; LINE slips are tiny, this is a safety net.
-  if (buffer.length > 10 * 1024 * 1024) {
+  // Groq's base64 image cap is 4 MB; LINE slips are tiny, this is a safety net.
+  if (buffer.length > 4 * 1024 * 1024) {
     return { ok: false, error: "image too large" };
   }
 
   const media_type = ALLOWED_MEDIA.has(contentType) ? contentType : "image/jpeg";
   const model = env.PARSE_MODEL || DEFAULT_MODEL;
+  const dataUrl = `data:${media_type};base64,${buffer.toString("base64")}`;
 
-  // Bound the call so a slow/hung Anthropic response can't consume the whole
-  // reply-token window. On timeout the AbortController aborts and we return
-  // {ok:false} fast, leaving time to send the graceful Thai error.
+  // Bound the call so a slow/hung Groq response can't consume the whole reply-token
+  // window. On timeout the AbortController aborts and we return {ok:false} fast,
+  // leaving time to send the graceful Thai error.
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), OCR_TIMEOUT_MS);
 
   let res;
   try {
-    res = await fetch(ANTHROPIC_URL, {
+    res = await fetch(GROQ_URL, {
       method: "POST",
       headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": ANTHROPIC_VERSION,
+        authorization: `Bearer ${apiKey}`,
         "content-type": "application/json",
       },
       body: JSON.stringify({
         model,
         max_tokens: 1024,
+        temperature: 0,
+        // JSON mode — the prompt mentions "JSON", which Groq requires for this.
+        // extractJson() below is still the safety net if the model strays.
+        response_format: { type: "json_object" },
         messages: [
           {
             role: "user",
             content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type,
-                  data: buffer.toString("base64"),
-                },
-              },
               { type: "text", text: PROMPT },
+              { type: "image_url", image_url: { url: dataUrl } },
             ],
           },
         ],
@@ -98,31 +97,34 @@ export async function parseSlip(buffer, contentType, env) {
     });
   } catch (e) {
     // AbortError (timeout) and genuine network errors both land here.
-    const error = e && e.name === "AbortError" ? "anthropic timeout" : "anthropic network error";
+    const error = e && e.name === "AbortError" ? "groq timeout" : "groq network error";
     return { ok: false, error };
   } finally {
     clearTimeout(timer);
   }
 
   if (!res.ok) {
-    return { ok: false, error: `anthropic ${res.status}` };
+    return { ok: false, error: `groq ${res.status}` };
   }
 
   let json;
   try {
     json = await res.json();
   } catch {
-    return { ok: false, error: "anthropic bad json envelope" };
+    return { ok: false, error: "groq bad json envelope" };
   }
 
-  const textBlock = Array.isArray(json.content)
-    ? json.content.find((b) => b && b.type === "text")
-    : null;
-  if (!textBlock || typeof textBlock.text !== "string") {
-    return { ok: false, error: "anthropic no text block" };
+  const content =
+    json &&
+    json.choices &&
+    json.choices[0] &&
+    json.choices[0].message &&
+    json.choices[0].message.content;
+  if (typeof content !== "string") {
+    return { ok: false, error: "groq no content" };
   }
 
-  const parsed = extractJson(textBlock.text);
+  const parsed = extractJson(content);
   if (!parsed) return { ok: false, error: "could not parse model JSON" };
 
   return { ok: true, data: normalize(parsed) };
