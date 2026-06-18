@@ -13,7 +13,7 @@
 
 ## ภาพรวมขั้นตอน (ทำครั้งเดียว)
 
-1. สร้าง LINE Official Account + Messaging API channel
+1. สร้าง **LINE Official Account** (ที่ manager.line.biz) แล้ว **เปิด Messaging API** → channel จะโผล่ใน Developers Console เอง
 2. คัดลอก **Channel access token** และ **Channel secret**
 3. ขอ **Groq API key** (สำหรับอ่านสลิปด้วย AI — ฟรี)
 4. (ไม่บังคับ) สร้าง **Vercel KV** ถ้าต้องการเก็บประวัติให้แดชบอร์ดอ่าน
@@ -23,16 +23,24 @@
 
 ---
 
-## ขั้นที่ 1 — สร้าง LINE Official Account + Messaging API channel
+## ขั้นที่ 1 — สร้าง LINE Official Account แล้วเปิด Messaging API
 
-1. ไปที่ <https://developers.line.biz/console/> แล้วล็อกอินด้วยบัญชี LINE
-2. สร้าง **Provider** ใหม่ (เช่น ชื่อร้าน/บริษัทของคุณ) ถ้ายังไม่มี
-3. ในโปรไวเดอร์นั้น กด **Create a new channel** → เลือก **Messaging API**
-4. กรอกชื่อ (เช่น `NONEAICE`), หมวดหมู่, ภาษา ฯลฯ แล้วสร้าง channel
-   - ระบบจะสร้าง **LINE Official Account** ให้อัตโนมัติพร้อมกัน
+> ⚠️ **ตั้งแต่ 4 ก.ย. 2024 LINE ยกเลิกการสร้าง Messaging API channel ตรง ๆ ใน Developers Console แล้ว**
+> ต้องสร้าง **LINE Official Account (OA)** ก่อน → เปิด Messaging API บน OA นั้น → channel จะถูกสร้างให้และโผล่ใน Developers Console เอง
 
-> ถ้าคุณมี LINE OA อยู่แล้ว ให้เข้าไปที่ <https://manager.line.biz/> →
-> เลือก OA → **Settings → Messaging API → Enable** แล้วผูกกับ provider เพื่อให้ได้ channel แบบ Messaging API
+**1.1 สร้าง LINE Official Account** *(ขั้นนี้คุณต้องทำเอง — เป็นการสมัครบัญชี + ยอมรับเงื่อนไข)*
+- ไปที่ **LINE Official Account Manager** <https://manager.line.biz/> → กด **Create / สร้างบัญชี**
+  (ถ้ายังไม่มี **LINE Business ID** ระบบจะให้สมัครที่ <https://account.line.biz/signup> ก่อน)
+- กรอกชื่อบัญชี (เช่น `Tongjai Renovate`), หมวดหมู่, ข้อมูลที่จำเป็น แล้วยอมรับเงื่อนไข
+
+**1.2 เปิด Messaging API บน OA นั้น**
+- ใน OA Manager → เลือก OA → **Settings (ตั้งค่า) → Messaging API → Enable / ใช้ Messaging API**
+- เลือก **Provider** (เช่น ชื่อบริษัทของคุณ) — ⚠️ เลือกแล้ว **เปลี่ยนไม่ได้**
+- ระบบจะ **สร้าง Messaging API channel ให้อัตโนมัติ**
+
+**1.3 ดู channel ใน Developers Console**
+- ไปที่ <https://developers.line.biz/console/> ล็อกอินด้วยบัญชีเดียวกัน → เลือก Provider → จะเห็น channel ที่เพิ่งสร้าง
+- จากนั้นไปขั้นที่ 2 เพื่อเอา Channel secret + access token
 
 ---
 
