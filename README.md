@@ -16,6 +16,50 @@ Three surfaces inside one phone frame, switched by a top segmented control:
 | `App.jsx` | React + Tailwind + lucide-react version. Single default-export component. |
 | `README.md` | This file. |
 
+## LINE bot — NONEAICE (บอทบันทึกใบเสร็จ)
+
+Screen B's NONEAICE chat is backed by a **real LINE Messaging API bot**, shipped as
+Vercel serverless functions in this same repo (under `/api`). Send a bank-transfer
+slip / receipt image to the LINE Official Account and the bot:
+
+1. downloads the image, OCRs it with **Claude vision** (amount, payee, date, ref),
+2. replies with a polished Flex **"ใบเสร็จ"** card,
+3. walks you through two postback choices — **👤 บุคคล / 🏢 บริษัท**, then
+   **📦 ค่าของ (บันทึกเป็นรายจ่าย) / 💼 ค่าแรง (หัก ณ ที่จ่าย)**,
+4. confirms **"✅ บันทึกเป็นใบรับรองแทนแล้วครับ"** and records the expense.
+
+The static UI above is **unaffected** — Vercel serves `index.html` at the root and
+routes `/api/*` to the functions.
+
+### Endpoints
+| Route | Purpose |
+|---|---|
+| `GET /api/line-webhook` | health check → `ok` |
+| `POST /api/line-webhook` | LINE webhook (signature-verified) |
+| `GET /api/transactions` | recorded ledger (JSON) for the dashboard — **auth required** (`Authorization: Bearer $DASHBOARD_TOKEN`); `[]` if KV unset, `503` if `DASHBOARD_TOKEN` unset |
+
+### Environment variables (set in Vercel → Settings → Environment Variables)
+| Name | Required | Purpose |
+|---|---|---|
+| `LINE_CHANNEL_ACCESS_TOKEN` | ✅ | LINE reply/push/content auth |
+| `LINE_CHANNEL_SECRET` | ✅ | verify `x-line-signature` |
+| `ANTHROPIC_API_KEY` | ✅ | Claude vision OCR |
+| `DASHBOARD_TOKEN` | required to read ledger | shared secret for `GET /api/transactions` (`Authorization: Bearer …`). Until set, that endpoint returns `503` (fails closed, never open) |
+| `PARSE_MODEL` | optional | override model (default `claude-haiku-4-5-20251001`) |
+| `DASHBOARD_ORIGIN` | optional | exact origin allowed to read `/api/transactions` from a browser (CORS). Omit for same-origin only — never `*` |
+| `KV_REST_API_URL` | optional | Vercel KV — persist ledger for the dashboard |
+| `KV_REST_API_TOKEN` | optional | Vercel KV token |
+
+The interactive flow works **without KV** (state is carried in the ≤300-char postback
+data); KV only persists the final ledger. Secrets are read from `process.env` and never
+logged. The ledger endpoint is **not public**: it requires `DASHBOARD_TOKEN` and never
+returns each record's `lineUserId` (PII / push target) — that field is stripped
+server-side. Note: the persisted ledger omits the payee name (`merchant`), which is
+display-only on the receipt card and intentionally not carried in the postback data.
+
+**Full setup walkthrough (Thai):** see [`LINE_SETUP.md`](LINE_SETUP.md). Webhook URL:
+`https://tongjai-renovate.vercel.app/api/line-webhook`.
+
 ## How to open `index.html`
 
 Just double-click it, or:
