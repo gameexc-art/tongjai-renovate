@@ -12,6 +12,7 @@ Three surfaces inside one phone frame, switched by a top segmented control:
 | File | What it is |
 |---|---|
 | `index.html` | Single, fully self-contained standalone page. Pure HTML/CSS/JS, no build step, no external resources. **Double-click to open offline.** |
+| `dashboard.html` | **LIVE** finance dashboard — passcode-gated page that reads the real recorded ledger from `GET /api/transactions` and renders it in Screen A's exact look. Served at `/dashboard`. |
 | `_widget.html` | The same UI as an embeddable fragment (no `<!doctype>`/`<html>`/`<head>`/`<body>`). All CSS is scoped under `.tjr-root`, outer background is transparent. Inject directly into a host `<div>`. |
 | `App.jsx` | React + Tailwind + lucide-react version. Single default-export component. |
 | `README.md` | This file. |
@@ -31,12 +32,33 @@ slip / receipt image to the LINE Official Account and the bot:
 The static UI above is **unaffected** — Vercel serves `index.html` at the root and
 routes `/api/*` to the functions.
 
+## หน้าการเงิน (live dashboard)
+
+`dashboard.html` is a **live** sibling of Screen A ("การเงินโครงการ"): it closes the loop by
+reading the **real** ledger the bot has recorded and rendering it in the same TONGJAI BLUEPRINT
+look (summary cards, filter pills, ledger rows).
+
+- **URL:** <https://tongjai-renovate.vercel.app/dashboard>
+- **Passcode-gated:** on load it asks for a password and calls `GET /api/transactions` with
+  `Authorization: Bearer <passcode>`. The passcode **is** the `DASHBOARD_TOKEN` env value. On
+  success the token is held only in `sessionStorage` (cleared when the tab closes, or via
+  **ออกจากระบบ/เปลี่ยนรหัส**) — it is never hard-coded in the page.
+- **Needs `DASHBOARD_TOKEN`** set in Vercel (the passcode), and **Vercel KV** for real rows —
+  without KV the endpoint authenticates fine but returns an empty list and the page shows the
+  "ยังไม่มีรายการ — ส่งสลิปเข้าบอท LINE NONEAICE" empty state. See **ขั้นที่ 4** in
+  [`LINE_SETUP.md`](LINE_SETUP.md) to enable KV (Vercel → Storage → Create Database → KV).
+- Income (รายรับ) is always `฿0.00` because the bot records **expenses only**; รายจ่ายสุทธิ is
+  the sum of all amounts and กำไร/ขาดทุน = `0 − รายจ่าย` (shown negative, red, ▼).
+- The page is same-origin only and HTML-escapes every server-provided string (merchant / ref /
+  date originate from OCR of user-uploaded images and are treated as untrusted).
+
 ### Endpoints
 | Route | Purpose |
 |---|---|
 | `GET /api/line-webhook` | health check → `ok` |
 | `POST /api/line-webhook` | LINE webhook (signature-verified) |
 | `GET /api/transactions` | recorded ledger (JSON) for the dashboard — **auth required** (`Authorization: Bearer $DASHBOARD_TOKEN`); `[]` if KV unset, `503` if `DASHBOARD_TOKEN` unset |
+| `GET /dashboard` | live passcode-gated finance dashboard page (`dashboard.html`); reads `/api/transactions` |
 
 ### Environment variables (set in Vercel → Settings → Environment Variables)
 | Name | Required | Purpose |

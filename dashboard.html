@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F6F2">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<!-- Defense-in-depth: even though all untrusted (OCR) data reaches the DOM only
+     via textContent, this CSP neutralizes any future regression that reintroduces
+     an HTML sink, and hard-enforces same-origin-only fetch (connect-src 'self'). -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'">
+<title>TONGJAI RENOVATE — การเงินโครงการ (LIVE)</title>
+<style>
+/* ============================================================
+   TONGJAI RENOVATE — LIVE FINANCE DASHBOARD
+   Sibling of Screen A ("การเงินโครงการ") in the TONGJAI BLUEPRINT
+   design system. Pure HTML/CSS/JS. No external resources, no build.
+   Reuses the EXACT tokens / components from index.html.
+   ============================================================ */
+:root{
+  /* BRAND MARK (fixed, never recolor) */
+  --brand-red:#E23B33; --brand-blue:#2667D6; --brand-orange:#F08A24; --brand-green:#2FA45A;
+
+  /* STRUCTURAL ACCENT (the one app blue) */
+  --accent:#1E5FCC; --accent-hover:#1A54B5; --accent-press:#174AA0;
+  --accent-tint:#EAF1FC; --accent-border:#BFD6F4; --accent-ring:rgba(30,95,204,.30);
+
+  /* PAPER / NEUTRALS */
+  --bg-canvas:#F6F6F2; --surface:#FFFFFF; --surface-2:#FBFAF7;
+  --line:#EAE7DF; --line-strong:#DBD9D1;
+  --ink:#15181E; --ink-2:#3C424C; --ink-3:#646B75; --ink-4:#9AA0A8;
+
+  /* SEMANTIC MONEY + STATUS */
+  --pos-text:#18753F; --pos-bar:#2FA45A; --pos-tint:#E7F4EC; --pos-border:#BFE3CC; --pos-btn:#178045; --pos-btn-hover:#14723C;
+  --neg-text:#C8322B; --neg-bar:#E23B33; --neg-tint:#FBEAE9; --neg-border:#F0C9C7; --neg-btn:#E23B33; --neg-btn-hover:#C72A22;
+  --amber:#9C520B; --amber-tint:#FCF0E0; --amber-bar:#F08A24;
+
+  /* CATEGORY BADGES */
+  --cat-mat-t:#475569; --cat-mat-bg:#EEF1F5; --cat-mat-bd:#DCE2EA;
+  --cat-lab-t:#185FA5; --cat-lab-bg:#EAF1FC; --cat-lab-bd:#BFD6F4;
+
+  /* TYPE */
+  --font:"LINE Seed Sans TH","IBM Plex Sans Thai","Noto Sans Thai","Anuphan",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-num:"IBM Plex Sans","Inter",ui-sans-serif,system-ui,sans-serif;
+
+  /* RADIUS */
+  --r-xs:6px; --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px;
+
+  /* ELEVATION */
+  --e1:0 1px 2px rgba(21,24,30,.04),0 1px 1px rgba(21,24,30,.03);
+  --e2:0 2px 8px rgba(21,24,30,.06),0 1px 2px rgba(21,24,30,.04);
+  --e3:0 12px 32px rgba(21,24,30,.14);
+
+  /* MOTION */
+  --ease-out:cubic-bezier(.22,.61,.36,1);
+  --ease-inout:cubic-bezier(.4,0,.2,1);
+}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+/* the [hidden] attribute must win over component display rules (.gate-wrap is
+   display:flex, which would otherwise keep a hidden gate painted) */
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font);
+  background:#E6E4DD;
+  color:var(--ink);
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  display:flex;align-items:flex-start;justify-content:center;
+  min-height:100vh;
+  padding:24px 12px;
+}
+.tnum{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+/* ---------- DEVICE FRAME ---------- */
+.device{
+  width:390px;max-width:100%;
+  background:var(--bg-canvas);
+  border-radius:34px;
+  box-shadow:0 30px 70px rgba(21,24,30,.30),0 2px 6px rgba(21,24,30,.12);
+  overflow:hidden;
+  position:relative;
+  border:1px solid rgba(0,0,0,.06);
+}
+.viewport{
+  height:780px;max-height:calc(100vh - 48px);
+  display:flex;flex-direction:column;
+  position:relative;
+}
+
+/* ---------- STATUS BAR (mock) ---------- */
+.statusbar{
+  height:44px;flex:0 0 44px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 22px;font-size:13px;font-weight:600;color:var(--ink-3);
+  background:var(--surface);
+}
+.statusbar .time{font-family:var(--font-num);letter-spacing:-.01em}
+.sb-glyphs{display:flex;align-items:center;gap:6px}
+.sb-glyphs svg{display:block}
+
+/* ---------- APP HEADER ---------- */
+.appheader{
+  flex:0 0 auto;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:var(--surface);
+  border-bottom:1px solid var(--line);
+  box-shadow:var(--e2);position:relative;z-index:30;
+}
+.brandlock{display:flex;align-items:center;gap:9px}
+.mark{width:30px;height:30px;flex:0 0 30px}
+.wordmark{display:flex;flex-direction:column;line-height:1}
+.wordmark .t1{font-size:15px;font-weight:800;letter-spacing:.04em;color:var(--ink)}
+.wordmark .t2{font-size:8px;font-weight:500;letter-spacing:.32em;color:var(--ink-3);margin-top:2px}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.admin-cluster{display:flex;align-items:center;gap:6px}
+.avatar{
+  width:32px;height:32px;border-radius:50%;background:var(--brand-orange);
+  color:#fff;font-size:14px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;flex:0 0 32px;
+}
+.admin-label{font-size:12px;font-weight:500;color:var(--ink-3);white-space:nowrap}
+.logout{
+  height:32px;padding:0 10px;background:none;border:1px solid var(--line);
+  border-radius:var(--r-sm);font-family:var(--font);
+  font-size:12px;font-weight:600;color:var(--ink-3);cursor:pointer;white-space:nowrap;
+  transition:background .12s var(--ease-out);
+}
+.logout:active{background:var(--surface-2)}
+@media (max-width:400px){.admin-label{display:none}}
+
+/* ---------- SCREEN BODY ---------- */
+.body-scroll{
+  flex:1 1 auto;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;position:relative;
+}
+.body-scroll::-webkit-scrollbar{width:0;height:0}
+.pad{padding:0 16px 24px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.screen{animation:fadeSlide .18s var(--ease-out)}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ---------- LIVE BADGE ---------- */
+.live-strip{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;
+  padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--line);
+  font-size:12px;font-weight:600;color:var(--ink-3);
+}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--brand-green);position:relative;flex:0 0 7px}
+.live-dot::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:1px solid var(--brand-green);opacity:.5;animation:pulse 1.8s var(--ease-inout) infinite}
+@keyframes pulse{0%{transform:scale(.7);opacity:.6}100%{transform:scale(1.6);opacity:0}}
+.live-strip .src{margin-left:auto;font-family:var(--font-num);color:var(--ink-4);font-weight:500}
+
+/* ---------- TITLE ROW ---------- */
+.titlerow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:20px;flex-wrap:wrap}
+.h1{font-size:22px;font-weight:700;line-height:1.35;letter-spacing:-.01em;color:var(--ink);display:flex;align-items:center;gap:7px}
+.title-pills{display:flex;gap:10px}
+.pill-btn{
+  height:40px;padding:0 14px;border:none;border-radius:var(--r-sm);
+  font-family:var(--font);font-size:14px;font-weight:700;color:var(--accent);cursor:pointer;
+  background:var(--accent-tint);
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  transition:transform .09s var(--ease-out),background .12s var(--ease-out);
+}
+.pill-btn:active{transform:scale(.97);background:var(--accent-border)}
+.pill-btn svg{transition:transform .5s var(--ease-out)}
+.pill-btn.spin svg{transform:rotate(360deg)}
+
+/* ---------- SUMMARY GRID ---------- */
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.card{
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);
+  box-shadow:var(--e1);position:relative;overflow:hidden;
+}
+.card.topbar::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--r-md) var(--r-md) 0 0}
+.bar-green::before{background:var(--pos-bar)}
+.bar-red::before{background:var(--neg-bar)}
+.bar-orange::before{background:var(--amber-bar)}
+.card-inner{padding:16px}
+.card.loss{background:linear-gradient(0deg,var(--neg-tint),var(--neg-tint)),var(--surface)}
+.card.loss .card-inner{background:rgba(251,234,233,.55)}
+.card-label{font-size:13px;font-weight:500;color:var(--ink-3);display:flex;align-items:center;justify-content:space-between}
+.card-amount{font-size:24px;font-weight:800;line-height:1.2;letter-spacing:-.02em;color:var(--ink);margin-top:8px;display:flex;align-items:baseline;gap:1px}
+.card-amount.neg{color:var(--neg-text)}
+.card-amount.pos{color:var(--pos-text)}
+.loss-arrow{opacity:0;transition:opacity .25s var(--ease-out)}
+.loss-arrow.settled{opacity:1}
+.card-meta{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:6px}
+.baht{font-size:.78em;color:var(--ink-3);font-weight:700;margin-right:1px}
+.card-amount.neg .baht,.card-amount.pos .baht{color:var(--ink-3);opacity:.7}
+.count-unit{font-size:13px;font-weight:500;color:var(--ink-3);margin-left:5px;align-self:flex-end;padding-bottom:3px}
+.micro-icon{position:absolute;top:10px;right:12px;color:var(--amber);font-size:13px;line-height:1}
+
+/* ---------- FILTER PILLS ---------- */
+.filter-row{display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px;margin-top:4px;scrollbar-width:none}
+.filter-row::-webkit-scrollbar{display:none}
+.fpill{
+  flex:0 0 auto;height:36px;padding:0 14px;border:none;border-radius:var(--r-pill);
+  background:var(--surface-2);color:var(--ink-3);font-family:var(--font);
+  font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  position:relative;transition:color .15s var(--ease-out),background .15s var(--ease-out);
+}
+.fpill.active{background:var(--accent-tint);color:var(--accent)}
+.fpill.active::after{content:"";position:absolute;left:14px;right:14px;bottom:4px;height:2px;background:var(--accent);border-radius:2px}
+
+/* ---------- TRANSACTION LIST ---------- */
+.date-subhead{font-size:12px;font-weight:700;color:var(--ink-3);padding:14px 2px 8px;font-family:var(--font-num)}
+.txlist{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--e1);overflow:hidden}
+.txrow{
+  min-height:64px;display:flex;align-items:center;gap:10px;padding:12px 14px 12px 0;
+  border-bottom:1px solid var(--line);position:relative;
+}
+.txrow:last-child{border-bottom:none}
+.tx-tick{width:4px;align-self:stretch;border-radius:0 3px 3px 0;flex:0 0 4px;margin-right:8px}
+.tick-mat{background:var(--cat-mat-t)}.tick-lab{background:var(--cat-lab-t)}
+.tx-left{flex:1 1 auto;min-width:0}
+.tx-date{font-size:12px;font-weight:500;color:var(--ink-3);font-family:var(--font-num)}
+.tx-title{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3;margin-top:1px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.tx-title .name{min-width:0;overflow-wrap:anywhere}
+.tx-title.unnamed .name{color:var(--ink-3);font-weight:500;font-style:italic}
+.tx-loc{font-size:12px;font-weight:500;color:var(--ink-3);margin-top:2px;overflow-wrap:anywhere}
+.badge{
+  display:inline-flex;align-items:center;height:18px;padding:0 7px;border-radius:var(--r-xs);
+  font-size:11px;font-weight:600;letter-spacing:.02em;border:1px solid;white-space:nowrap;
+}
+.b-mat{color:var(--cat-mat-t);background:var(--cat-mat-bg);border-color:var(--cat-mat-bd)}
+.b-lab{color:var(--cat-lab-t);background:var(--cat-lab-bg);border-color:var(--cat-lab-bd)}
+.tx-right{flex:0 0 auto;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.tx-amount{font-size:16px;font-weight:600;line-height:1.3;color:var(--neg-text)}
+.tx-amount .baht{opacity:.75}
+.status-icon{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;white-space:nowrap}
+.st-paid{color:var(--pos-text)}
+.st-wht{color:var(--amber)}
+
+/* ---------- STATE BLOCKS (loading / empty / error) ---------- */
+.statebox{
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);
+  box-shadow:var(--e1);padding:32px 22px;text-align:center;margin-top:14px;
+}
+.statebox .ico{font-size:34px;line-height:1;margin-bottom:10px}
+.statebox .st-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.statebox .st-sub{font-size:13px;font-weight:500;color:var(--ink-3);line-height:1.6}
+.retry{
+  margin-top:16px;height:40px;padding:0 18px;border:none;border-radius:var(--r-sm);
+  background:var(--accent);color:#fff;font-family:var(--font);font-size:14px;font-weight:700;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+  transition:background .12s var(--ease-out),transform .09s var(--ease-out);
+}
+.retry:active{transform:scale(.97);background:var(--accent-hover)}
+
+/* skeleton */
+.skel-card{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-md);box-shadow:var(--e1);height:96px}
+.skel-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px}
+.skel-row{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;padding:0 14px}
+.shimmer{position:relative;overflow:hidden;background:var(--surface-2)}
+.shimmer::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);
+  animation:shimmer 1.25s infinite}
+@keyframes shimmer{100%{transform:translateX(100%)}}
+.sk-bar{height:12px;border-radius:6px;background:var(--line)}
+
+/* ============================================================
+   PASSCODE GATE
+   ============================================================ */
+.gate-wrap{
+  flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px 22px;background:var(--bg-canvas);position:relative;text-align:center;
+}
+.gate-grid{position:absolute;inset:0;background-image:radial-gradient(var(--line-strong) .8px,transparent .8px);background-size:24px 24px;opacity:.4;pointer-events:none}
+.gate-card{
+  position:relative;z-index:1;width:100%;max-width:300px;
+  background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r-lg);
+  box-shadow:var(--e3);padding:26px 22px 22px;
+}
+.gate-mark{width:46px;height:46px;margin:0 auto 14px}
+.gate-title{font-size:17px;font-weight:700;color:var(--ink);line-height:1.4}
+.gate-sub{font-size:13px;font-weight:500;color:var(--ink-3);margin-top:7px;line-height:1.6}
+.gate-form{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.field{position:relative;display:flex;align-items:center}
+.field .pw-ico{position:absolute;left:12px;color:var(--ink-4);display:flex;pointer-events:none}
+.gate-input{
+  width:100%;height:46px;border:1px solid var(--line-strong);border-radius:var(--r-sm);
+  background:var(--surface-2);padding:0 44px 0 38px;font-family:var(--font);
+  font-size:15px;color:var(--ink);outline:none;
+  transition:border-color .15s var(--ease-out),box-shadow .15s var(--ease-out),background .15s var(--ease-out);
+}
+.gate-input::placeholder{color:var(--ink-4)}
+.gate-input:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px var(--accent-ring)}
+.reveal{position:absolute;right:8px;background:none;border:none;color:var(--ink-3);cursor:pointer;padding:6px;display:flex;border-radius:8px}
+.reveal:active{background:var(--surface-2)}
+.gate-btn{
+  height:46px;border:none;border-radius:var(--r-sm);background:var(--accent);color:#fff;
+  font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:background .12s var(--ease-out),transform .09s var(--ease-out);
+}
+.gate-btn:active{transform:scale(.98);background:var(--accent-hover)}
+.gate-btn[disabled]{opacity:.65;cursor:default;transform:none}
+.gate-spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+.gate-btn.loading .gate-spin{display:inline-block}
+.gate-btn.loading .gate-btn-label{opacity:.85}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gate-msg{
+  font-size:13px;font-weight:600;line-height:1.5;margin-top:4px;min-height:0;
+  display:none;align-items:flex-start;gap:6px;text-align:left;padding:10px 12px;border-radius:var(--r-sm);
+}
+.gate-msg.show{display:flex}
+.gate-msg.err{color:var(--neg-text);background:var(--neg-tint);border:1px solid var(--neg-border)}
+.gate-msg.warn{color:var(--amber);background:var(--amber-tint);border:1px solid #F3D9B0}
+.gate-msg svg{flex:0 0 auto;margin-top:1px}
+.gate-foot{font-size:11px;font-weight:500;color:var(--ink-4);margin-top:16px;line-height:1.6;position:relative;z-index:1;max-width:300px}
+
+/* reduced motion */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.12s!important;animation-iteration-count:1!important;transition-duration:.12s!important}
+  .live-dot::after{animation:none!important;opacity:0}
+}
+
+/* focus */
+button:focus-visible,[tabindex]:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.gate-input:focus-visible{outline:none}
+</style>
+</head>
+<body>
+<div class="device" role="group" aria-label="TONGJAI RENOVATE — การเงินโครงการ">
+  <div class="viewport">
+
+    <!-- STATUS BAR -->
+    <div class="statusbar">
+      <span class="time" id="clock">9:41</span>
+      <span class="sb-glyphs" aria-hidden="true">
+        <svg width="18" height="11" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="6" rx="1"/><rect x="10" y="2.5" width="3" height="8.5" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg>
+        <svg width="16" height="11" viewBox="0 0 16 11" fill="currentColor"><path d="M8 11a1.6 1.6 0 1 0 0-3.2A1.6 1.6 0 0 0 8 11Zm0-5.2a4.6 4.6 0 0 1 3.3 1.4l1.4-1.5a6.7 6.7 0 0 0-9.4 0l1.4 1.5A4.6 4.6 0 0 1 8 5.8ZM8 .8a9.7 9.7 0 0 0-6.9 2.9L2.5 5A7.7 7.7 0 0 1 8 2.8 7.7 7.7 0 0 1 13.5 5l1.4-1.4A9.7 9.7 0 0 0 8 .8Z"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3" stroke="currentColor" opacity=".5"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="currentColor"/><rect x="23" y="3.5" width="2" height="5" rx="1" fill="currentColor" opacity=".5"/></svg>
+      </span>
+    </div>
+
+    <!-- APP HEADER -->
+    <header class="appheader">
+      <div class="brandlock">
+        <span class="mark" aria-hidden="true" id="markHost"></span>
+        <span class="wordmark"><span class="t1">TONGJAI</span><span class="t2">RENOVATE</span></span>
+      </div>
+      <div class="hdr-right">
+        <div class="admin-cluster">
+          <span class="avatar">ผ</span>
+          <span class="admin-label">ผู้ดูแลระบบ</span>
+        </div>
+        <button class="logout" type="button" id="logoutBtn" hidden onclick="logout()">ออกจากระบบ</button>
+      </div>
+    </header>
+
+    <!-- ============ PASSCODE GATE ============ -->
+    <section class="gate-wrap" id="gate" hidden>
+      <div class="gate-grid" aria-hidden="true"></div>
+      <form class="gate-card" id="gateForm" autocomplete="off" novalidate>
+        <span class="gate-mark" aria-hidden="true" id="gateMarkHost"></span>
+        <h1 class="gate-title">ใส่รหัสผ่านเพื่อดูข้อมูลการเงิน</h1>
+        <p class="gate-sub">หน้านี้แสดงรายการที่บอท LINE <strong>NONEAICE</strong> บันทึกไว้ ป้อนรหัสผ่านเพื่อเข้าดู</p>
+
+        <div class="gate-form">
+          <div class="field">
+            <span class="pw-ico" aria-hidden="true">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="2" stroke="currentColor" stroke-width="1.4"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.4"/></svg>
+            </span>
+            <input class="gate-input" id="pw" type="password" inputmode="text"
+              placeholder="รหัสผ่าน (DASHBOARD_TOKEN)" aria-label="รหัสผ่าน"
+              autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+            <button class="reveal" type="button" id="revealBtn" aria-label="แสดง/ซ่อนรหัส" aria-pressed="false">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" id="eyeIco"><path d="M1.5 9S4.5 3.8 9 3.8 16.5 9 16.5 9 13.5 14.2 9 14.2 1.5 9 1.5 9Z" stroke="currentColor" stroke-width="1.3"/><circle cx="9" cy="9" r="2.2" stroke="currentColor" stroke-width="1.3"/></svg>
+            </button>
+          </div>
+
+          <div class="gate-msg" id="gateMsg" role="alert" aria-live="assertive"></div>
+
+          <button class="gate-btn" id="gateBtn" type="submit">
+            <span class="gate-spin" aria-hidden="true"></span>
+            <span class="gate-btn-label">เข้าสู่ระบบ</span>
+          </button>
+        </div>
+      </form>
+      <p class="gate-foot">🔒 รหัสจะถูกเก็บไว้ชั่วคราวในเบราว์เซอร์นี้เท่านั้น (ปิดแท็บแล้วหาย) และส่งผ่านการเชื่อมต่อที่ปลอดภัยเท่านั้น</p>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <div class="live-strip" id="liveStrip" hidden>
+      <span class="live-dot" aria-hidden="true"></span>
+      <span>เชื่อมต่อสด · LINE NONEAICE</span>
+      <span class="src" id="updatedAt"></span>
+    </div>
+
+    <div class="body-scroll" id="bodyScroll" hidden>
+      <section class="screen" aria-label="การเงินโครงการ (LIVE)">
+        <h2 class="sr-only" id="srSummary">กำลังโหลดข้อมูลการเงิน…</h2>
+        <div class="pad">
+          <div class="titlerow">
+            <h1 class="h1">💰 การเงินโครงการ</h1>
+            <div class="title-pills">
+              <button class="pill-btn" type="button" id="refreshBtn" onclick="refresh()" aria-label="โหลดข้อมูลใหม่">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M13.6 2.2v3.1h-3.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span>รีเฟรช</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- content host: summary + filters + list (or state blocks) -->
+          <div id="content"></div>
+        </div>
+      </section>
+    </div>
+
+  </div><!-- /viewport -->
+</div><!-- /device -->
+
+<script>
+"use strict";
+/* ============================================================
+   TONGJAI RENOVATE — LIVE FINANCE DASHBOARD (logic)
+   ============================================================ */
+var SS_KEY = "tongjai.dashboard.token";
+var ENDPOINT = "/api/transactions"; // same-origin only
+
+/* ---------- PINWHEEL MARK (from index.html) ---------- */
+function pinwheel(size){
+  return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 30 30" role="img" aria-label="โลโก้ TONGJAI">'
+    +'<g transform="rotate(45 15 15)">'
+    +'<rect x="5.2" y="5.2" width="9" height="9" rx="2.4" fill="#E23B33"/>'
+    +'<rect x="15.8" y="5.2" width="9" height="9" rx="2.4" fill="#2667D6"/>'
+    +'<rect x="5.2" y="15.8" width="9" height="9" rx="2.4" fill="#2FA45A"/>'
+    +'<rect x="15.8" y="15.8" width="9" height="9" rx="2.4" fill="#F08A24"/>'
+    +'</g></svg>';
+}
+document.getElementById('markHost').innerHTML = pinwheel(30);
+document.getElementById('gateMarkHost').innerHTML = pinwheel(46);
+
+/* ---------- tiny DOM helpers ---------- */
+function $(id){ return document.getElementById(id); }
+/** Create an element with optional class + textContent (text is never parsed
+ *  as HTML — safe for untrusted data). */
+function el(tag, cls, text){
+  var n = document.createElement(tag);
+  if(cls) n.className = cls;
+  if(text != null) n.textContent = text;
+  return n;
+}
+
+/* ---------- mock clock ---------- */
+(function(){
+  function tick(){
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    $("clock").textContent = h + ":" + (m<10?"0":"") + m;
+  }
+  tick(); setInterval(tick, 15000);
+})();
+
+/* ---------- money formatting (Screen A rules) ----------
+   ฿ prefix, comma-grouped, 2 decimals, minus before symbol. */
+function fmtNum(n, dec){
+  var s = Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return s;
+}
+/** Build a baht figure as DOM nodes into a parent. signed: render minus before ฿. */
+function bahtInto(parent, value, opts){
+  opts = opts || {};
+  var neg = value < 0;
+  var sym = (neg ? "−" : "") + "฿";
+  var b = el("span","baht", sym);
+  parent.appendChild(b);
+  parent.appendChild(document.createTextNode(fmtNum(value, opts.dec==null?2:opts.dec)));
+}
+
+/* ============================================================
+   AUTH GATE
+   ============================================================ */
+var token = null;
+
+function showGate(){
+  $("gate").hidden = false;
+  $("bodyScroll").hidden = true;
+  $("liveStrip").hidden = true;
+  $("logoutBtn").hidden = true;
+  setTimeout(function(){ try{ $("pw").focus(); }catch(e){} }, 60);
+}
+function showDashboard(){
+  $("gate").hidden = true;
+  $("bodyScroll").hidden = false;
+  $("liveStrip").hidden = false;
+  $("logoutBtn").hidden = false;
+}
+function gateMessage(kind, text){
+  var m = $("gateMsg");
+  m.className = "gate-msg show " + (kind==="warn"?"warn":"err");
+  m.textContent = "";
+  var ico = (kind==="warn")
+    ? '<svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1.2 14 13H1L7.5 1.2Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M7.5 5.6v3.1M7.5 10.6v.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>'
+    : '<svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.3" stroke="currentColor" stroke-width="1.2"/><path d="M7.5 4.2v4M7.5 10.4v.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+  m.insertAdjacentHTML("afterbegin", ico);
+  m.insertAdjacentText("beforeend", text);
+}
+function clearGateMessage(){
+  var m = $("gateMsg"); m.className = "gate-msg"; m.textContent = "";
+}
+function setGateLoading(on){
+  var b = $("gateBtn");
+  b.classList.toggle("loading", on);
+  b.disabled = on;
+  $("pw").disabled = on;
+  b.querySelector(".gate-btn-label").textContent = on ? "กำลังตรวจสอบ…" : "เข้าสู่ระบบ";
+}
+
+/** Call the endpoint with a candidate token. Resolves with {status, data}. */
+function apiGet(candidate){
+  return fetch(ENDPOINT, {
+    method: "GET",
+    headers: { "Authorization": "Bearer " + candidate },
+    cache: "no-store",
+    credentials: "same-origin"
+  }).then(function(res){
+    return res.json().catch(function(){ return null; }).then(function(data){
+      return { status: res.status, ok: res.ok, data: data };
+    });
+  });
+}
+
+/* gate submit */
+$("gateForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  var candidate = $("pw").value.trim();
+  if(!candidate){ gateMessage("err","กรุณาใส่รหัสผ่าน"); $("pw").focus(); return; }
+  clearGateMessage();
+  setGateLoading(true);
+  apiGet(candidate).then(function(r){
+    if(r.status === 200 && r.data && r.data.ok){
+      try{ sessionStorage.setItem(SS_KEY, candidate); }catch(e){}
+      token = candidate;
+      $("pw").value = "";
+      setGateLoading(false);
+      clearGateMessage();
+      showDashboard();
+      renderData(r.data); // we already have the payload — no second fetch
+    } else if(r.status === 401){
+      setGateLoading(false);
+      gateMessage("err","รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง");
+      $("pw").focus(); $("pw").select();
+    } else if(r.status === 503){
+      setGateLoading(false);
+      gateMessage("warn","ยังไม่ได้เปิดใช้งาน (ตั้ง DASHBOARD_TOKEN ใน Vercel)");
+    } else {
+      setGateLoading(false);
+      if(typeof console!=="undefined") console.warn("dashboard: unexpected status", Number(r.status)||0);
+      gateMessage("err","เชื่อมต่อไม่สำเร็จ ลองใหม่อีกครั้ง");
+    }
+  }).catch(function(){
+    setGateLoading(false);
+    gateMessage("err","เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่");
+  });
+});
+
+/* reveal toggle */
+$("revealBtn").addEventListener("click", function(){
+  var inp = $("pw"), pressed = inp.type === "text";
+  inp.type = pressed ? "password" : "text";
+  this.setAttribute("aria-pressed", String(!pressed));
+  $("eyeIco").innerHTML = pressed
+    ? '<path d="M1.5 9S4.5 3.8 9 3.8 16.5 9 16.5 9 13.5 14.2 9 14.2 1.5 9 1.5 9Z" stroke="currentColor" stroke-width="1.3"/><circle cx="9" cy="9" r="2.2" stroke="currentColor" stroke-width="1.3"/>'
+    : '<path d="M2.5 2.5l13 13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M6.3 6.4A2.2 2.2 0 0 0 9 11.2M1.5 9S4.5 3.8 9 3.8c1 0 1.9.25 2.7.62M14.4 6.8c1.2 1 2.1 2.2 2.1 2.2S13.5 14.2 9 14.2c-.5 0-1-.06-1.4-.16" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>';
+  inp.focus();
+});
+
+/* logout / change passcode */
+function logout(){
+  try{ sessionStorage.removeItem(SS_KEY); }catch(e){}
+  token = null;
+  $("content").innerHTML = "";
+  $("pw").value = "";
+  clearGateMessage();
+  showGate();
+}
+
+/* ============================================================
+   DATA RENDER
+   ============================================================ */
+var CATS = {
+  // category code -> presentation. Bot records only these two.
+  expense:     { label:"ค่าของ",      badge:"b-mat", tick:"tick-mat", icon:"📦", pillIcon:"📦", group:"mat" },
+  withholding: { label:"ค่าแรงช่าง",  badge:"b-lab", tick:"tick-lab", icon:"💼", pillIcon:"💼", group:"lab" }
+};
+var currentFilter = "all"; // all | expense | withholding
+var lastTx = [];
+
+/** Refresh button — re-fetch using the stored token. */
+function refresh(){
+  if(!token) { showGate(); return; }
+  var btn = $("refreshBtn");
+  btn.classList.add("spin");
+  btn.disabled = true;
+  loadFromServer().then(function(){
+    setTimeout(function(){ btn.classList.remove("spin"); btn.disabled = false; }, 400);
+  });
+}
+
+/** Fetch with the active token; handle auth drift (401/503) by returning to gate. */
+function loadFromServer(){
+  renderLoading();
+  return apiGet(token).then(function(r){
+    if(r.status === 200 && r.data && r.data.ok){
+      renderData(r.data);
+    } else if(r.status === 401){
+      // token no longer valid (rotated) — clear and gate.
+      try{ sessionStorage.removeItem(SS_KEY); }catch(e){}
+      token = null;
+      showGate();
+      gateMessage("err","เซสชันหมดอายุหรือรหัสถูกเปลี่ยน กรุณาเข้าสู่ระบบใหม่");
+    } else if(r.status === 503){
+      try{ sessionStorage.removeItem(SS_KEY); }catch(e){}
+      token = null;
+      showGate();
+      gateMessage("warn","ยังไม่ได้เปิดใช้งาน (ตั้ง DASHBOARD_TOKEN ใน Vercel)");
+    } else {
+      if(typeof console!=="undefined") console.warn("dashboard: unexpected status", Number(r.status)||0);
+      renderError("โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง");
+    }
+  }).catch(function(){
+    renderError("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองอีกครั้ง");
+  });
+}
+
+/** Normalize one raw record into a safe, typed shape. */
+function normalize(t){
+  t = t || {};
+  var amount = Number(t.amount);
+  if(!isFinite(amount) || amount < 0) amount = 0;
+  // Round to 2 decimals (satang) at the source so the summary total and the
+  // sum of displayed rows reconcile exactly — sum(round(x)) == round(sum(x)).
+  amount = Math.round(amount * 100) / 100;
+  var category = (t.category === "withholding") ? "withholding" : "expense";
+  var entity = (t.entity === "company") ? "company" : "person";
+  return {
+    amount: amount,
+    merchant: typeof t.merchant === "string" ? t.merchant : "",
+    date: typeof t.date === "string" ? t.date : "",
+    ref: typeof t.ref === "string" ? t.ref : "",
+    entity: entity,
+    category: category,
+    createdAt: typeof t.createdAt === "string" ? t.createdAt : ""
+  };
+}
+
+function renderData(payload){
+  var raw = (payload && Array.isArray(payload.transactions)) ? payload.transactions : [];
+  lastTx = raw.map(normalize); // server sends newest-first; preserve order
+  stampUpdated();
+  paint();
+}
+
+/** Update the "live · updated HH:MM" stamp. */
+function stampUpdated(){
+  var d = new Date();
+  var hh = d.getHours(), mm = d.getMinutes();
+  $("updatedAt").textContent = "อัปเดต " + hh + ":" + (mm<10?"0":"") + mm;
+}
+
+/* ---------- summary math (honest; computed from data) ---------- */
+function computeSummary(tx){
+  var matTotal = 0, labTotal = 0, matCount = 0, labCount = 0;
+  for(var i=0;i<tx.length;i++){
+    if(tx[i].category === "withholding"){ labTotal += tx[i].amount; labCount++; }
+    else { matTotal += tx[i].amount; matCount++; }
+  }
+  var expense = matTotal + labTotal;
+  return {
+    income: 0,
+    expense: expense,
+    profit: 0 - expense,        // รายรับ(0) − รายจ่าย
+    count: tx.length,
+    matTotal: matTotal, labTotal: labTotal,
+    matCount: matCount, labCount: labCount
+  };
+}
+
+/* ---------- top-level painter ---------- */
+function paint(){
+  var host = $("content");
+  host.innerHTML = "";
+  var s = computeSummary(lastTx);
+
+  // SR summary
+  $("srSummary").textContent = lastTx.length
+    ? ("สรุปการเงินโครงการ: รายจ่ายสุทธิ " + fmtNum(s.expense,2) + " บาท, " + s.count + " รายการ, ขาดทุน")
+    : "ยังไม่มีรายการการเงินในระบบ";
+
+  host.appendChild(buildSummary(s));
+
+  if(lastTx.length === 0){
+    host.appendChild(buildEmpty());
+    return;
+  }
+
+  host.appendChild(buildFilters(s));
+
+  // filtered list
+  var shown = lastTx.filter(function(t){
+    return currentFilter === "all" || t.category === currentFilter;
+  });
+  host.appendChild(buildList(shown));
+}
+
+/* ---------- summary cards (2x2, Screen A look) ---------- */
+function buildSummary(s){
+  var grid = el("div","summary-grid");
+
+  // รายรับสุทธิ — always ฿0.00 (no income records exist)
+  grid.appendChild(card({
+    bar:"bar-green", label:"รายรับสุทธิ",
+    amount:function(a){ bahtInto(a, 0, {dec:2}); },
+    meta:"ยังไม่มีรายรับในระบบ"
+  }));
+
+  // รายจ่ายสุทธิ — sum of all amounts
+  grid.appendChild(card({
+    bar:"bar-red", label:"รายจ่ายสุทธิ", neg:true,
+    amount:function(a){ bahtInto(a, s.expense, {dec:2}); },
+    meta:"ค่าของ " + s.matCount + " · ค่าแรง " + s.labCount
+  }));
+
+  // กำไร / ขาดทุน — รายรับ − รายจ่าย (negative, red, ▼)
+  grid.appendChild(card({
+    bar:"bar-red", loss:true, label:"กำไร / ขาดทุน", neg:true,
+    amount:function(a){
+      var arrow = el("span","loss-arrow"); arrow.setAttribute("aria-hidden","true"); arrow.textContent="▼";
+      a.appendChild(arrow); a.appendChild(document.createTextNode(" "));
+      bahtInto(a, s.profit, {dec:2});
+      // settle the arrow after paint
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ arrow.classList.add("settled"); }); });
+    },
+    meta:"รายรับ − รายจ่าย"
+  }));
+
+  // รายการทั้งหมด — count
+  grid.appendChild(card({
+    bar:"bar-orange", label:"รายการทั้งหมด", micro:"📊",
+    amount:function(a){
+      a.appendChild(document.createTextNode(s.count.toLocaleString('en-US')));
+      a.appendChild(el("span","count-unit","รายการ"));
+    },
+    meta:"บันทึกจากบอท LINE"
+  }));
+
+  return grid;
+}
+
+function card(cfg){
+  var c = el("div","card topbar " + cfg.bar + (cfg.loss?" loss":""));
+  if(cfg.micro){
+    var mi = el("span","micro-icon", cfg.micro); mi.setAttribute("aria-hidden","true");
+    c.appendChild(mi);
+  }
+  var inner = el("div","card-inner");
+  inner.appendChild(el("div","card-label", cfg.label));
+  var amt = el("div","card-amount tnum" + (cfg.neg?" neg":"") );
+  cfg.amount(amt);
+  inner.appendChild(amt);
+  inner.appendChild(el("div","card-meta", cfg.meta));
+  c.appendChild(inner);
+  return c;
+}
+
+/* ---------- filter pills (adapt to categories present) ---------- */
+function buildFilters(s){
+  var row = el("div","filter-row");
+  row.setAttribute("role","group");
+  row.setAttribute("aria-label","ตัวกรองรายการ");
+
+  var defs = [
+    { key:"all",         icon:"📋", label:"ทั้งหมด", n:s.count },
+    { key:"expense",     icon:"📦", label:"ค่าของ",  n:s.matCount },
+    { key:"withholding", icon:"💼", label:"ค่าแรง",  n:s.labCount }
+  ];
+  defs.forEach(function(d){
+    var b = el("button","fpill" + (currentFilter===d.key?" active":""));
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(currentFilter===d.key));
+    var i = el("span", null, d.icon); i.setAttribute("aria-hidden","true");
+    b.appendChild(i);
+    b.appendChild(document.createTextNode(" " + d.label + " (" + d.n + ")"));
+    b.addEventListener("click", function(){
+      currentFilter = d.key;
+      paint();
+      $("bodyScroll").scrollTop = $("bodyScroll").scrollTop; // keep position
+    });
+    row.appendChild(b);
+  });
+  return row;
+}
+
+/* ---------- transaction list (ledger rows) ---------- */
+function buildList(items){
+  var wrap = document.createDocumentFragment();
+
+  if(items.length === 0){
+    var box = el("div","statebox");
+    box.appendChild(el("div","ico","🔍"));
+    box.appendChild(el("div","st-title","ไม่มีรายการในตัวกรองนี้"));
+    box.appendChild(el("div","st-sub","ลองเลือกตัวกรอง “ทั้งหมด” เพื่อดูทุกรายการ"));
+    wrap.appendChild(box);
+    return wrap;
+  }
+
+  // Group under a date subhead like Screen A (by transaction date, newest first).
+  // Records arrive in createdAt-desc (insertion) order, but the slip date is
+  // independent of createdAt — so the same calendar date can be non-contiguous.
+  // Sort by date key desc (createdAt as tiebreaker, undated rows last) so the
+  // consecutive-grouping loop below produces one subhead per date, in date order.
+  var sorted = items.slice().sort(function(a,b){
+    var ka = a.date || "", kb = b.date || "";
+    if(ka !== kb){
+      if(!ka) return 1;   // undated → last
+      if(!kb) return -1;
+      return ka < kb ? 1 : -1; // YYYY-MM-DD sorts correctly as strings, desc
+    }
+    var ca = a.createdAt || "", cb = b.createdAt || "";
+    if(ca === cb) return 0;
+    return cb < ca ? -1 : 1; // newest createdAt first within a date
+  });
+
+  var lastKey = null, list = null;
+  sorted.forEach(function(t){
+    var key = t.date || "ไม่ระบุวันที่";
+    if(key !== lastKey){
+      lastKey = key;
+      wrap.appendChild(dateSubhead(key));
+      list = el("div","txlist");
+      wrap.appendChild(list);
+    }
+    list.appendChild(txRow(t));
+  });
+  return wrap;
+}
+
+function dateSubhead(key){
+  var d = el("div","date-subhead tnum");
+  d.textContent = key; // key is either a YYYY-MM-DD string or the Thai fallback
+  return d;
+}
+
+function txRow(t){
+  var cat = CATS[t.category] || CATS.expense;
+  var row = el("div","txrow");
+
+  // colored category tick
+  var tick = el("span","tx-tick " + cat.tick); tick.setAttribute("aria-hidden","true");
+  row.appendChild(tick);
+
+  // LEFT
+  var left = el("div","tx-left");
+  left.appendChild(el("div","tx-date tnum", t.date || "ไม่ระบุวันที่"));
+
+  var hasName = t.merchant && t.merchant.trim();
+  var title = el("div","tx-title" + (hasName?"":" unnamed"));
+  // merchant name (untrusted → textContent)
+  title.appendChild(el("span","name", hasName ? t.merchant : "ไม่ระบุผู้รับ"));
+  // category badge — TEXT-ONLY to match Screen A (no in-badge emoji). One badge
+  // per row, exactly like the reference ledger.
+  var cb = el("span","badge " + cat.badge);
+  cb.appendChild(document.createTextNode(cat.label));
+  title.appendChild(cb);
+  left.appendChild(title);
+
+  // sub-line: entity + ref, plain text, led by the Screen A middot (untrusted
+  // ref → textContent). entity is moved here so the title keeps a single badge.
+  var subParts = [t.entity === "company" ? "บริษัท" : "บุคคล"];
+  if(t.ref && t.ref.trim()) subParts.push("อ้างอิง " + t.ref);
+  left.appendChild(el("div","tx-loc", "· " + subParts.join(" · ")));
+  row.appendChild(left);
+
+  // RIGHT — hard-right tabular negative ฿ + status glyph
+  var right = el("div","tx-right");
+  var amt = el("div","tx-amount tnum");
+  bahtInto(amt, -t.amount, {dec:2}); // money spent → negative
+  right.appendChild(amt);
+
+  if(t.category === "withholding"){
+    var w = el("span","status-icon st-wht");
+    w.insertAdjacentHTML("afterbegin",'<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.6" stroke="#9C520B" stroke-width="1.2"/><path d="M6.5 3.5V6.7l2 1.2" stroke="#9C520B" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    w.insertAdjacentText("beforeend","หัก ณ ที่จ่าย");
+    right.appendChild(w);
+  } else {
+    var p = el("span","status-icon st-paid");
+    p.insertAdjacentHTML("afterbegin",'<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="6" fill="#E7F4EC"/><path d="M4 6.6l1.8 1.8L9 4.8" stroke="#18753F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    p.insertAdjacentText("beforeend","จ่ายแล้ว");
+    right.appendChild(p);
+  }
+  row.appendChild(right);
+
+  return row;
+}
+
+/* ---------- STATE BLOCKS ---------- */
+function renderLoading(){
+  var host = $("content");
+  host.innerHTML = "";
+  // skeleton summary
+  var g = el("div","skel-grid");
+  for(var i=0;i<4;i++) g.appendChild(el("div","skel-card shimmer"));
+  host.appendChild(g);
+  // skeleton list
+  var list = el("div","txlist");
+  list.style.marginTop = "18px";
+  for(var j=0;j<4;j++){
+    var r = el("div","skel-row");
+    var bars = el("div"); bars.style.flex="1";
+    var b1 = el("div","sk-bar shimmer"); b1.style.width="40%";
+    var b2 = el("div","sk-bar shimmer"); b2.style.width="64%"; b2.style.marginTop="8px"; b2.style.height="10px";
+    bars.appendChild(b1); bars.appendChild(b2);
+    var b3 = el("div","sk-bar shimmer"); b3.style.width="64px";
+    r.appendChild(bars); r.appendChild(b3);
+    list.appendChild(r);
+  }
+  host.appendChild(list);
+}
+
+function buildEmpty(){
+  var box = el("div","statebox");
+  box.appendChild(el("div","ico","🧾"));
+  box.appendChild(el("div","st-title","ยังไม่มีรายการ"));
+  box.appendChild(el("div","st-sub","ส่งสลิปเข้าบอท LINE NONEAICE เพื่อบันทึกอัตโนมัติ"));
+  return box;
+}
+
+function renderError(message){
+  var host = $("content");
+  host.innerHTML = "";
+  var box = el("div","statebox");
+  box.appendChild(el("div","ico","⚠️"));
+  box.appendChild(el("div","st-title","โหลดข้อมูลไม่สำเร็จ"));
+  box.appendChild(el("div","st-sub", message));
+  var btn = el("button","retry");
+  btn.type="button";
+  btn.insertAdjacentHTML("afterbegin",'<svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M13.6 2.2v3.1h-3.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+  btn.insertAdjacentText("beforeend","ลองอีกครั้ง");
+  btn.addEventListener("click", function(){ loadFromServer(); });
+  box.appendChild(btn);
+  host.appendChild(box);
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+(function boot(){
+  var stored = null;
+  try{ stored = sessionStorage.getItem(SS_KEY); }catch(e){}
+  if(stored){
+    token = stored;
+    showDashboard();
+    loadFromServer();
+  } else {
+    showGate();
+  }
+})();
+</script>
+</body>
+</html>
