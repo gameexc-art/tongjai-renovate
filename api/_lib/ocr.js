@@ -53,8 +53,9 @@ export async function parseSlip(buffer, contentType, env) {
   const apiKey = env.GROQ_API_KEY;
   if (!apiKey) return { ok: false, error: "missing GROQ_API_KEY" };
 
-  // Groq's base64 image cap is 4 MB; LINE slips are tiny, this is a safety net.
-  if (buffer.length > 4 * 1024 * 1024) {
+  // Groq's cap is 4 MB of BASE64 — base64 inflates bytes by 4/3, so the raw
+  // limit is 3 MB. LINE slips are tiny; this is a safety net.
+  if (buffer.length > 3 * 1024 * 1024) {
     return { ok: false, error: "image too large" };
   }
 

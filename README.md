@@ -11,7 +11,7 @@ Three surfaces inside one phone frame, switched by a top segmented control:
 
 | File | What it is |
 |---|---|
-| `index.html` | Single, fully self-contained standalone page. Pure HTML/CSS/JS, no build step, no external resources. **Double-click to open offline.** |
+| `index.html` | Single, fully self-contained standalone page. Pure HTML/CSS/JS, no build step, no external resources. **Double-click to open offline.** Every control works: filter pills filter the ledger, the Gantt month switcher (6/26 · 7/26) swaps windows, the แผนงาน/ความก้าวหน้า/รายงาน tabs switch views, Excel exports a real CSV (UTF-8 BOM), the chat input answers like the real bot, and logout shows a demo toast. |
 | `dashboard.html` | **LIVE** finance dashboard — passcode-gated page that reads the real recorded ledger from `GET /api/transactions` and renders it in Screen A's exact look. Served at `/dashboard`. |
 | `_widget.html` | The same UI as an embeddable fragment (no `<!doctype>`/`<html>`/`<head>`/`<body>`). All CSS is scoped under `.tjr-root`, outer background is transparent. Inject directly into a host `<div>`. |
 | `App.jsx` | React + Tailwind + lucide-react version. Single default-export component. |
@@ -27,7 +27,15 @@ slip / receipt image to the LINE Official Account and the bot:
 2. replies with a polished Flex **"ใบเสร็จ"** card,
 3. walks you through two postback choices — **👤 บุคคล / 🏢 บริษัท**, then
    **📦 ค่าของ (บันทึกเป็นรายจ่าย) / 💼 ค่าแรง (หัก ณ ที่จ่าย)**,
-4. confirms **"✅ บันทึกเป็นใบรับรองแทนแล้วครับ"** and records the expense.
+4. confirms **"✅ บันทึกเป็นใบรับรองแทนแล้วครับ"** and records the expense —
+   including the payee name (merchant), carried through the postback flow on a
+   best-effort budget (trimmed first if the 300-char postback limit is tight).
+
+Saving is idempotent per slip: a LINE redelivery **or** re-tapping the confirm
+button maps to the same content identity (a short hash of the image messageId
+rides in the postback data), so one slip can never be recorded twice. The bot
+also answers correctly inside group/room chats — push fallbacks go back to the
+same conversation, not to the sender's private chat.
 
 The static UI above is **unaffected** — Vercel serves `index.html` at the root and
 routes `/api/*` to the functions.
@@ -41,14 +49,16 @@ look (summary cards, filter pills, ledger rows).
 - **URL:** <https://tongjai-renovate.vercel.app/dashboard>
 - **Passcode-gated:** on load it asks for a password and calls `GET /api/transactions` with
   `Authorization: Bearer <passcode>`. The passcode **is** the `DASHBOARD_TOKEN` env value. On
-  success the token is held only in `sessionStorage` (cleared when the tab closes, or via
-  **ออกจากระบบ/เปลี่ยนรหัส**) — it is never hard-coded in the page.
-- **Needs `DASHBOARD_TOKEN`** set in Vercel (the passcode), and **Vercel KV** for real rows —
-  without KV the endpoint authenticates fine but returns an empty list and the page shows the
-  "ยังไม่มีรายการ — ส่งสลิปเข้าบอท LINE NONEAICE" empty state. See **ขั้นที่ 4** in
-  [`LINE_SETUP.md`](LINE_SETUP.md) to enable KV (Vercel → Storage → Create Database → KV).
+  success the token is held only in `sessionStorage` (cleared when the tab closes, or via the
+  **ออกจากระบบ** button) — it is never hard-coded in the page.
+- **Needs `DASHBOARD_TOKEN`** set in Vercel (the passcode) and a storage backend for real
+  rows. This deployment uses **Vercel Blob** (`BLOB_READ_WRITE_TOKEN`, already provisioned —
+  store `tongjai-ledger`, private); Vercel KV (`KV_REST_API_*`) is also supported and wins
+  when both are configured. With neither, the endpoint authenticates fine but returns an
+  empty list and the page shows the "ยังไม่มีรายการ" empty state.
 - Income (รายรับ) is always `฿0.00` because the bot records **expenses only**; รายจ่ายสุทธิ is
-  the sum of all amounts and กำไร/ขาดทุน = `0 − รายจ่าย` (shown negative, red, ▼).
+  the sum of all amounts and กำไร/ขาดทุน = `0 − รายจ่าย` (shown negative, red, ▼ — but neutral,
+  not red, while the ledger is still empty at ฿0.00).
 - The page is same-origin only and HTML-escapes every server-provided string (merchant / ref /
   date originate from OCR of user-uploaded images and are treated as untrusted).
 
@@ -57,7 +67,7 @@ look (summary cards, filter pills, ledger rows).
 |---|---|
 | `GET /api/line-webhook` | health check → `ok` |
 | `POST /api/line-webhook` | LINE webhook (signature-verified) |
-| `GET /api/transactions` | recorded ledger (JSON) for the dashboard — **auth required** (`Authorization: Bearer $DASHBOARD_TOKEN`); `[]` if KV unset, `503` if `DASHBOARD_TOKEN` unset |
+| `GET /api/transactions` | recorded ledger for the dashboard — **auth required** (`Authorization: Bearer $DASHBOARD_TOKEN`, or the `x-dashboard-token` header). Responds `{ ok, count, transactions }`; `transactions` is `[]` when no storage backend is configured, `503` if `DASHBOARD_TOKEN` unset (fails closed), `502` if the storage backend itself fails (never masked as an empty ledger) |
 | `GET /dashboard` | live passcode-gated finance dashboard page (`dashboard.html`); reads `/api/transactions` |
 
 ### Environment variables (set in Vercel → Settings → Environment Variables)
@@ -67,17 +77,20 @@ look (summary cards, filter pills, ledger rows).
 | `LINE_CHANNEL_SECRET` | ✅ | verify `x-line-signature` |
 | `GROQ_API_KEY` | ✅ | Groq vision OCR |
 | `DASHBOARD_TOKEN` | required to read ledger | shared secret for `GET /api/transactions` (`Authorization: Bearer …`). Until set, that endpoint returns `503` (fails closed, never open) |
-| `PARSE_MODEL` | optional | override model (default `meta-llama/llama-4-scout-17b-16e-instruct`) |
+| `BLOB_READ_WRITE_TOKEN` | ✅ (set) | Vercel Blob — persists the ledger (private store `tongjai-ledger`, one immutable blob per record under `ledger/rec/`). Injected automatically when the store is connected to the project |
+| `PARSE_MODEL` | optional | override the OCR model. **Must be a Groq VISION-capable model** (the default `meta-llama/llama-4-scout-17b-16e-instruct` is) — a text-only model will fail every slip |
 | `DASHBOARD_ORIGIN` | optional | exact origin allowed to read `/api/transactions` from a browser (CORS). Omit for same-origin only — never `*` |
-| `KV_REST_API_URL` | optional | Vercel KV — persist ledger for the dashboard |
+| `KV_REST_API_URL` | optional | Vercel KV / Upstash Redis — alternative ledger backend (wins over Blob when both are set) |
 | `KV_REST_API_TOKEN` | optional | Vercel KV token |
 
-The interactive flow works **without KV** (state is carried in the ≤300-char postback
-data); KV only persists the final ledger. Secrets are read from `process.env` and never
-logged. The ledger endpoint is **not public**: it requires `DASHBOARD_TOKEN` and never
-returns each record's `lineUserId` (PII / push target) — that field is stripped
-server-side. Note: the persisted ledger omits the payee name (`merchant`), which is
-display-only on the receipt card and intentionally not carried in the postback data.
+The interactive flow works **without any storage backend** (state is carried in the
+≤300-char postback data); storage only persists the final ledger. Secrets are read from
+`process.env` and never logged. The ledger endpoint is **not public**: it requires
+`DASHBOARD_TOKEN` and never returns each record's `lineUserId` (PII / push target) —
+that field is stripped server-side, along with the internal `dedupeKey`. The payee name
+(`merchant`) IS carried through the postback flow and persisted, so the dashboard shows
+real payees; when a very long Thai ref + merchant would overflow the 300-char postback
+budget, merchant is trimmed first, then ref — both at clean character boundaries.
 
 **Full setup walkthrough (Thai):** see [`LINE_SETUP.md`](LINE_SETUP.md). Webhook URL:
 `https://tongjai-renovate.vercel.app/api/line-webhook`.
@@ -100,17 +113,24 @@ It works offline — fonts fall back to the system Thai stack, no network needed
 npm create vite@latest my-app -- --template react
 cd my-app
 npm install
-npm install -D tailwindcss postcss autoprefixer && npx tailwindcss init -p
-npm install lucide-react
+npm install tailwindcss @tailwindcss/vite lucide-react
 ```
 
-Add Tailwind to `src/index.css`:
+Tailwind v4 has no `init`/PostCSS step — register the Vite plugin in `vite.config.js`:
+
+```js
+import tailwindcss from "@tailwindcss/vite";
+export default defineConfig({ plugins: [react(), tailwindcss()] });
+```
+
+and make `src/index.css` a single import:
 
 ```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 ```
+
+(On a legacy Tailwind v3 project the old `@tailwind base/components/utilities`
+directives + `npx tailwindcss init -p` still work — the component itself doesn't care.)
 
 Then drop `App.jsx` in `src/` and render it:
 

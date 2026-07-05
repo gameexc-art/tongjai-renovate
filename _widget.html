@@ -258,7 +258,7 @@
 .tjr-root .gantt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;position:relative;scrollbar-width:thin}
 .tjr-root .gantt-scroll::-webkit-scrollbar{height:6px}
 .tjr-root .gantt-scroll::-webkit-scrollbar-thumb{background:var(--line-strong);border-radius:3px}
-.tjr-root .gantt-table{display:grid;min-width:560px;position:relative}
+.tjr-root .gantt-table{display:grid;min-width:452px;position:relative}
 .tjr-root .gantt-grid-bg{position:absolute;inset:0;background-image:radial-gradient(var(--line-strong) .8px,transparent .8px);background-size:24px 24px;background-position:0 0;opacity:.45;pointer-events:none}
 .tjr-root .grow{display:grid;grid-template-columns:130px 44px 44px 1fr;align-items:stretch;border-bottom:1px solid var(--line);position:relative;z-index:1}
 .tjr-root .grow.head{border-bottom:1px solid var(--line-strong);background:var(--surface)}
@@ -299,12 +299,41 @@
 .tjr-root .leg .sw.today{width:0;height:14px;border-left:2px dashed var(--neg-bar);border-radius:0}
 .tjr-root .leg-verdict{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--neg-text);font-family:var(--font-num)}
 
+.tjr-root .tx-empty{display:none;padding:26px 16px;text-align:center;font-size:13px;font-weight:500;color:var(--ink-3)}
+.tjr-root .tx-empty.show{display:block}
+.tjr-root .plan-view{display:none}
+.tjr-root .plan-view.show{display:block}
+.tjr-root .prog-row{padding:12px 14px;border-bottom:1px solid var(--line)}
+.tjr-root .prog-row:last-child{border-bottom:none}
+.tjr-root .prog-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.tjr-root .prog-name{font-size:14px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tjr-root .prog-pct{font-size:12px;font-weight:700;font-family:var(--font-num);color:var(--neg-text);white-space:nowrap}
+.tjr-root .prog-track{height:6px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line);margin-top:8px;overflow:hidden}
+.tjr-root .prog-track > i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.tjr-root .report-list{padding:6px 0}
+.tjr-root .report-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px}
+.tjr-root .report-row:last-child{border-bottom:none}
+.tjr-root .report-k{font-weight:500;color:var(--ink-3)}
+.tjr-root .report-v{font-weight:700;color:var(--ink);font-family:var(--font-num)}
+.tjr-root .report-v.late{color:var(--neg-text)}
+.tjr-root .toast{
+  position:absolute;left:50%;bottom:28px;transform:translateX(-50%) translateY(8px);
+  background:var(--ink);color:#fff;font-size:13px;font-weight:600;
+  padding:10px 16px;border-radius:var(--r-pill);box-shadow:var(--e3);
+  opacity:0;pointer-events:none;transition:opacity .18s var(--ease-out),transform .18s var(--ease-out);
+  z-index:60;white-space:nowrap;max-width:88%;overflow:hidden;text-overflow:ellipsis;
+}
+.tjr-root .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.tjr-root input.ci-field{color:var(--chat-ink);font-family:var(--font);outline:none}
+.tjr-root input.ci-field::placeholder{color:var(--chat-ink-3)}
 @media (prefers-reduced-motion:reduce){
   .tjr-root *,.tjr-root *::before,.tjr-root *::after{animation-duration:.12s!important;animation-iteration-count:1!important;transition-duration:.12s!important}
+  .tjr-root .screen{animation:none!important}
   .tjr-root .today-line{animation:none!important;opacity:.85}
   .tjr-root .seg-thumb{transition:none!important}
+  .tjr-root .toast{transition:opacity .12s!important;transform:translateX(-50%)!important}
 }
-.tjr-root button:focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--accent-ring)}
+.tjr-root button:focus-visible,.tjr-root [tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--accent-ring)}
 </style>
 
 <div class="tjr-root" role="group" aria-label="TONGJAI RENOVATE">
@@ -326,7 +355,7 @@
           <span class="wordmark"><span class="t1">TONGJAI</span><span class="t2">RENOVATE</span></span>
         </div>
         <div class="hdr-right">
-          <button class="proj-chip" type="button" aria-label="สลับโครงการ">โครงการ
+          <button class="proj-chip" type="button" aria-label="สลับโครงการ" data-sp="สลับโครงการ">โครงการ
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="admin-cluster"><span class="avatar">ผ</span><span class="admin-label">ผู้ดูแลระบบ</span></div>
@@ -350,14 +379,14 @@
           <h2 class="sr-only">สรุปการเงินโครงการ: รายจ่ายสุทธิ 141,520.60 บาท ขาดทุน</h2>
           <div class="breadcrumb">
             <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 12L12 1M3.5 12V9.5M6 12V8M8.5 12V10.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            <span>คลิกชื่องาน = ไปวันเริ่มงาน</span><span class="mid">·</span><span>คลิกช่องวัน = บันทึก</span>
+            <span>รายการล่าสุด <span class="tnum">2026-06-11</span></span><span class="mid">·</span><span>แตะปุ่มกรองเพื่อเลือกดู</span>
           </div>
           <div class="pad">
             <div class="titlerow">
               <h1 class="h1">💰 การเงินโครงการ</h1>
               <div class="title-pills">
-                <button class="pill-btn pill-green">+ รายรับ</button>
-                <button class="pill-btn pill-red">+ รายจ่าย</button>
+                <button class="pill-btn pill-green" data-sp="เพิ่มรายรับ">+ รายรับ</button>
+                <button class="pill-btn pill-red" data-sp="เพิ่มรายจ่าย">+ รายจ่าย</button>
               </div>
             </div>
             <div class="summary-grid">
@@ -371,7 +400,7 @@
                 <div class="card-meta">หลังหัก ณ ที่จ่าย</div></div></div>
               <div class="card topbar bar-red loss"><div class="card-inner">
                 <div class="card-label">กำไร / ขาดทุน</div>
-                <div class="card-amount neg tnum"><span class="loss-arrow" aria-hidden="true">▼</span> <span class="baht">-฿</span><span data-count="-141520.60" data-dec="2" data-signed="1">141,520.60</span></div>
+                <div class="card-amount neg tnum"><span class="loss-arrow" aria-hidden="true">▼</span> <span class="baht">−฿</span><span data-count="-141520.60" data-dec="2" data-signed="1">141,520.60</span></div>
                 <div class="card-meta">รายรับ − รายจ่าย</div></div></div>
               <div class="card topbar bar-orange"><span class="micro-icon" aria-hidden="true">📊</span><div class="card-inner">
                 <div class="card-label">รายการทั้งหมด</div>
@@ -379,10 +408,10 @@
                 <div class="card-meta">ทั้งรายรับและรายจ่าย</div></div></div>
             </div>
             <div class="filter-row" role="group" aria-label="ตัวกรองรายการ">
-              <button class="fpill active" type="button" aria-pressed="true"><span aria-hidden="true">📋</span> ทั้งหมด</button>
-              <button class="fpill" type="button" aria-pressed="false"><span aria-hidden="true">💚</span> รายรับ</button>
-              <button class="fpill" type="button" aria-pressed="false"><span aria-hidden="true">🔴</span> รายจ่าย</button>
-              <button class="fpill" type="button" aria-pressed="false"><span aria-hidden="true">📊</span> สรุปภาษี</button>
+              <button class="fpill active" type="button" aria-pressed="true" data-filter="all"><span aria-hidden="true">📋</span> ทั้งหมด</button>
+              <button class="fpill" type="button" aria-pressed="false" data-filter="income"><span aria-hidden="true">💚</span> รายรับ</button>
+              <button class="fpill" type="button" aria-pressed="false" data-filter="expense"><span aria-hidden="true">🔴</span> รายจ่าย</button>
+              <button class="fpill" type="button" aria-pressed="false" data-filter="tax"><span aria-hidden="true">📊</span> สรุปภาษี</button>
             </div>
             <div class="date-subhead">2026-06-11</div>
             <div class="txlist">
@@ -414,6 +443,7 @@
                 <div class="tx-left"><div class="tx-date tnum">2026-06-11</div><div class="tx-title">ค่าเช่านั่งร้าน <span class="badge b-mat">ค่าของ</span></div><div class="tx-loc">· สฟ.คลองแงะ</div></div>
                 <div class="tx-right"><div class="tx-amount tnum"><span class="baht">−฿</span>3,200.00</div>
                   <span class="status-icon st-pending"><svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.6" stroke="#9AA0A8" stroke-width="1.2"/><path d="M6.5 3.6V6.7l2 1.2" stroke="#646B75" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>รอจ่าย</span></div></div>
+              <div class="tx-empty" role="status"></div>
             </div>
           </div>
         </section>
@@ -458,8 +488,8 @@
                   <div class="r-line">🏢 Starbucks Coffee</div>
                   <div class="r-line tnum">📅 2026-06-15</div>
                   <div class="chat-actions">
-                    <button class="cbtn">👤 บุคคล</button>
-                    <button class="cbtn">🏢 บริษัท</button>
+                    <button class="cbtn" data-sp="บุคคล">👤 บุคคล</button>
+                    <button class="cbtn" data-sp="บริษัท">🏢 บริษัท</button>
                   </div>
                 </div>
                 <span class="msg-time">12:05</span>
@@ -468,8 +498,8 @@
                 <div class="bubble">
                   <div class="prompt-bubble">เลือกประเภทค่าจ่าย:</div>
                   <div class="chat-actions stack">
-                    <button class="cbtn">📦 ค่าของ<span class="dim">(บันทึกเป็นรายจ่าย)</span></button>
-                    <button class="cbtn">💼 ค่าแรง<span class="dim">(หัก ณ ที่จ่าย)</span></button>
+                    <button class="cbtn" data-sp="ค่าของ">📦 ค่าของ<span class="dim">(บันทึกเป็นรายจ่าย)</span></button>
+                    <button class="cbtn" data-sp="ค่าแรง">💼 ค่าแรง<span class="dim">(หัก ณ ที่จ่าย)</span></button>
                   </div>
                 </div>
                 <span class="msg-time">12:05</span>
@@ -484,7 +514,7 @@
             </div>
             <div class="chat-input">
               <button class="ci-attach" aria-label="แนบไฟล์"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 4v10M4 9h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
-              <div class="ci-field">พิมพ์ข้อความ หรือส่งสลิป…</div>
+              <input class="ci-field" type="text" placeholder="พิมพ์ข้อความ หรือส่งสลิป…" aria-label="พิมพ์ข้อความ">
               <button class="ci-send" aria-label="ส่ง"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8l12-5-5 12-2.2-4.8L2 8Z" fill="currentColor"/></svg></button>
             </div>
           </div>
@@ -503,9 +533,9 @@
               </div>
             </div></div>
             <div class="tab-row" role="group" aria-label="มุมมองแผนงาน">
-              <button class="tab active" type="button" aria-pressed="true"><span aria-hidden="true">📊</span> แผนงาน</button>
-              <button class="tab" type="button" aria-pressed="false"><span aria-hidden="true">📈</span> ความก้าวหน้า</button>
-              <button class="tab" type="button" aria-pressed="false"><span aria-hidden="true">🗺</span> รายงาน</button>
+              <button class="tab active" type="button" aria-pressed="true" data-view="gantt"><span aria-hidden="true">📊</span> แผนงาน</button>
+              <button class="tab" type="button" aria-pressed="false" data-view="progress"><span aria-hidden="true">📈</span> ความก้าวหน้า</button>
+              <button class="tab" type="button" aria-pressed="false" data-view="report"><span aria-hidden="true">🗺</span> รายงาน</button>
               <button class="tab-excel" type="button"><svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true"><rect x="1.5" y="1" width="10" height="11" rx="1.5" stroke="currentColor" stroke-width="1.1"/><path d="M4.5 4l4 5M8.5 4l-4 5" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg> Excel</button>
             </div>
             <div class="kpi-grid">
@@ -515,22 +545,26 @@
               <div class="kpi b-graphite"><div class="kpi-label">ระยะเวลา</div><div class="kpi-val ink">45<span class="kpi-unit">วัน</span></div><div class="kpi-meta">ตั้งแต่ 2026-06-01</div></div>
             </div>
             <div class="section">
-              <div class="gantt-card">
-                <div class="gantt-head">
-                  <div class="h2">📊 ตาราง Gantt แผนงาน</div>
-                  <div class="gctl">
-                    <div class="month-seg" role="group" aria-label="เลือกเดือน"><button class="mseg active" type="button" aria-pressed="true" aria-label="มิถุนายน 2026">6/26</button><button class="mseg" type="button" aria-pressed="false" aria-label="กรกฎาคม 2026">7/26</button></div>
-                    <button class="today-jump" id="tjrTodayJump" type="button"><span aria-hidden="true">📍</span> วันนี้</button>
+              <div class="plan-view show" data-plan-view="gantt">
+                <div class="gantt-card">
+                  <div class="gantt-head">
+                    <div class="h2">📊 ตาราง Gantt แผนงาน</div>
+                    <div class="gctl">
+                      <div class="month-seg" role="group" aria-label="เลือกเดือน"><button class="mseg active" type="button" aria-pressed="true" aria-label="มิถุนายน 2026" data-m="6">6/26</button><button class="mseg" type="button" aria-pressed="false" aria-label="กรกฎาคม 2026" data-m="7">7/26</button></div>
+                      <button class="today-jump" id="tjrTodayJump" type="button"><span aria-hidden="true">📍</span> วันนี้</button>
+                    </div>
+                  </div>
+                  <div class="gantt-scroll" id="tjrGanttScroll"><div class="gantt-table" id="tjrGanttTable"></div></div>
+                  <div class="gantt-legend">
+                    <span class="leg"><span class="sw plan"></span>วางแผน</span>
+                    <span class="leg"><span class="sw late"></span>ล่าช้า / ยังไม่ทำ</span>
+                    <span class="leg" data-leg-today><span class="sw today"></span>วันนี้ (17)</span>
+                    <span class="leg-verdict">จริง 0% · ล่าช้า</span>
                   </div>
                 </div>
-                <div class="gantt-scroll" id="tjrGanttScroll"><div class="gantt-table" id="tjrGanttTable"></div></div>
-                <div class="gantt-legend">
-                  <span class="leg"><span class="sw plan"></span>วางแผน</span>
-                  <span class="leg"><span class="sw late"></span>ล่าช้า / ยังไม่ทำ</span>
-                  <span class="leg"><span class="sw today"></span>วันนี้ (17)</span>
-                  <span class="leg-verdict">จริง 0% · ล่าช้า</span>
-                </div>
               </div>
+              <div class="plan-view" data-plan-view="progress"><div class="gantt-card" data-progress-card></div></div>
+              <div class="plan-view" data-plan-view="report"><div class="gantt-card" data-report-card></div></div>
             </div>
           </div>
         </section>
@@ -542,9 +576,21 @@
 
 <script>
 (function(){
-  var root=document.currentScript.closest('.tjr-root') || document.querySelector('.tjr-root');
-  if(!root) return;
+  // Instance resolution that survives BOTH direct embedding and hosts that
+  // re-execute inline scripts via innerHTML/textContent (where
+  // document.currentScript is null): prefer the script's own enclosing
+  // .tjr-root, else claim the first NOT-YET-INITIALIZED root. Each run tags
+  // its root, so two embedded copies each get their own instance.
+  var cs=document.currentScript;
+  var root=(cs&&cs.closest&&cs.closest('.tjr-root'))||document.querySelector('.tjr-root:not([data-tjr-init])');
+  if(!root||root.hasAttribute('data-tjr-init')) return;
+  root.setAttribute('data-tjr-init','1');
   window.sendPrompt = window.sendPrompt || function(t){};
+
+  // host-integration hook: every action button carries its prompt in data-sp
+  root.querySelectorAll('[data-sp]').forEach(function(b){
+    b.addEventListener('click',function(){ window.sendPrompt&&window.sendPrompt(b.dataset.sp); });
+  });
 
   function pinwheel(size){
     return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 30 30" role="img" aria-label="โลโก้ TONGJAI">'
@@ -636,45 +682,215 @@
   }
   countUp();
 
+  /* ---------- FILTER PILLS (Screen A) ---------- */
   (function(){
-    var DAYS=[14,15,16,17,18,19,20,21,22], TODAY=17, DAYW=26;
-    var tasks=[
-      {name:'Scania Building',range:'06-08 → 06-12',w:'5.00',crit:false,s:14,e:15},
-      {name:'Scania Building',range:'06-09 → 06-10',w:'3.00',crit:false,s:15,e:16},
-      {name:'Scania Roof Drain',range:'06-14 → 06-20',w:'12.00',crit:true,s:14,e:20},
-      {name:'Scania Building',range:'06-12 → 06-18',w:'8.00',crit:false,s:17,e:19},
-      {name:'Scania Roof Drain',range:'06-13 → 06-17',w:'6.00',crit:false,s:16,e:21},
-      {name:'Scania Electrical',range:'06-15 → 06-20',w:'4.00',crit:false,s:18,e:22},
-      {name:'Scania Building',range:'06-16 → 06-22',w:'7.00',crit:false,s:19,e:22}
-    ];
+    var pills=root.querySelectorAll('#tjrScreenA .fpill');
+    var rows=Array.prototype.slice.call(root.querySelectorAll('#tjrScreenA .txrow'));
+    var subhead=root.querySelector('#tjrScreenA .date-subhead');
+    var empty=root.querySelector('#tjrScreenA .tx-empty');
+    function apply(filter){
+      var shown=0;
+      rows.forEach(function(row){
+        // all/expense → every demo row (they are all expenses); tax → only
+        // "หัก ณ ที่จ่าย" rows; income → none (the bot records expenses only)
+        var show=(filter==='all'||filter==='expense')?true
+                :(filter==='tax')?!!row.querySelector('.st-wht')
+                :false;
+        row.style.display=show?'':'none';
+        if(show) shown++;
+      });
+      empty.classList.toggle('show',shown===0);
+      empty.textContent=shown===0?'ไม่มีรายการรายรับในช่วงนี้ — บอทบันทึกรายจ่ายเท่านั้น':'';
+      if(subhead) subhead.style.display=shown===0?'none':'';
+    }
+    pills.forEach(function(p){
+      p.addEventListener('click',function(){
+        pills.forEach(function(q){ var on=(q===p); q.classList.toggle('active',on); q.setAttribute('aria-pressed',on?'true':'false'); });
+        apply(p.dataset.filter);
+      });
+    });
+  })();
+
+  /* ---------- TOAST ---------- */
+  var toastTimer=null;
+  function toast(msg){
+    var el=root.querySelector('.toast');
+    if(!el){
+      el=document.createElement('div');
+      el.className='toast'; el.setAttribute('role','status'); el.setAttribute('aria-live','polite');
+      root.querySelector('.device').appendChild(el);
+    }
+    el.textContent=msg; el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){ el.classList.remove('show'); },2200);
+  }
+
+  /* ---------- LOGOUT (demo) ---------- */
+  root.querySelector('.logout').addEventListener('click',function(){
+    window.sendPrompt&&window.sendPrompt('ออกจากระบบ');
+    toast('โหมดเดโม — ยังไม่ได้เชื่อมระบบล็อกอิน');
+  });
+
+  /* ---------- CHAT (scripted demo, mirrors the real NONEAICE bot) ---------- */
+  function chatAppend(side,text){
+    var body=root.querySelector('#tjrScreenB .chat-body');
+    var wrap=document.createElement('div'); wrap.className='msg '+side;
+    var b=document.createElement('div'); b.className='bubble'; b.textContent=text;
+    var t=document.createElement('span'); t.className='msg-time';
+    t.textContent=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    wrap.appendChild(b); wrap.appendChild(t); body.appendChild(wrap);
+    var sc=root.querySelector('#tjrBodyScroll'); sc.scrollTop=sc.scrollHeight;
+  }
+  var chatField=root.querySelector('input.ci-field');
+  function chatSend(){
+    var text=(chatField.value||'').trim();
+    if(!text){ chatField.focus(); return; }
+    window.sendPrompt&&window.sendPrompt(text);
+    chatAppend('right',text);
+    chatField.value='';
+    setTimeout(function(){
+      // same reply the real LINE bot gives for a text message
+      chatAppend('left','ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸');
+    },600);
+  }
+  root.querySelector('.ci-send').addEventListener('click',chatSend);
+  chatField.addEventListener('keydown',function(e){ if(e.key==='Enter') chatSend(); });
+  root.querySelector('.ci-attach').addEventListener('click',function(){
+    window.sendPrompt&&window.sendPrompt('แนบสลิป');
+    toast('เดโม — ส่งสลิปได้ที่บอท LINE NONEAICE ตัวจริง');
+  });
+
+  /* ---------- GANTT (month-switchable) + PROGRESS / REPORT views ---------- */
+  var GANTT={
+    '6':{ days:[14,15,16,17,18,19,20,21,22], today:17,
+      tasks:[
+        {name:'Scania Building',range:'06-14 → 06-15',w:'5.00',crit:false,s:14,e:15},
+        {name:'Scania Building',range:'06-15 → 06-16',w:'3.00',crit:false,s:15,e:16},
+        {name:'Scania Roof Drain',range:'06-14 → 06-20',w:'12.00',crit:true,s:14,e:20},
+        {name:'Scania Building',range:'06-17 → 06-19',w:'8.00',crit:false,s:17,e:19},
+        {name:'Scania Roof Drain',range:'06-16 → 06-21',w:'6.00',crit:false,s:16,e:21},
+        {name:'Scania Electrical',range:'06-18 → 06-22',w:'4.00',crit:false,s:18,e:22},
+        {name:'Scania Building',range:'06-19 → 06-22',w:'7.00',crit:false,s:19,e:22}
+      ]},
+    '7':{ days:[1,2,3,4,5,6,7,8,9], today:null,
+      tasks:[
+        {name:'Scania Roof Drain',range:'06-28 → 07-04',w:'6.00',crit:true,s:1,e:4},
+        {name:'Scania Electrical',range:'07-01 → 07-06',w:'5.00',crit:false,s:1,e:6},
+        {name:'Scania Painting',range:'07-03 → 07-09',w:'4.00',crit:false,s:3,e:9},
+        {name:'Scania Building',range:'07-05 → 07-09',w:'7.00',crit:false,s:5,e:9}
+      ]}
+  };
+  var DAYW=26, FROZENW=130+44+44, ganttMonth='6';
+
+  function buildGantt(m){
+    var cfg=GANTT[m], DAYS=cfg.days, TODAY=cfg.today;
     var axisW=DAYS.length*DAYW, t=root.querySelector('#tjrGanttTable'), html='';
     html+='<div class="gantt-grid-bg"></div>';
     html+='<div class="grow head"><div class="gc frozen">รายการงาน</div><div class="gc num wcol">น้ำหนัก</div><div class="gc num acol">%จริง</div><div class="gc daygrid" style="position:relative;padding:0"><div class="dayhead">';
-    DAYS.forEach(function(d){ html+='<span class="dcell'+(d===TODAY?' today':'')+(d<TODAY?' past':'')+'">'+d+'</span>'; });
+    DAYS.forEach(function(d){ html+='<span class="dcell'+(TODAY!==null&&d===TODAY?' today':'')+(TODAY!==null&&d<TODAY?' past':'')+'">'+d+'</span>'; });
     html+='</div></div></div>';
-    tasks.forEach(function(tk){
+    cfg.tasks.forEach(function(tk){
       html+='<div class="grow"><div class="gc frozen"><div class="gc-task">'+tk.name+'</div><div class="gc-range">'+tk.range+'</div></div>'
           +'<div class="gc num wcol"><span class="gc-w'+(tk.crit?' crit':'')+'">'+tk.w+'</span></div>'
           +'<div class="gc num acol"><span class="gc-a">0.00</span></div>'
           +'<div class="gc daygrid" style="padding:0"><div class="lane" style="width:'+axisW+'px">';
-      DAYS.forEach(function(d){ html+='<span class="slot'+(d===TODAY?' todaywash':'')+(d<TODAY?' past':'')+'"></span>'; });
+      DAYS.forEach(function(d){ html+='<span class="slot'+(TODAY!==null&&d===TODAY?' todaywash':'')+(TODAY!==null&&d<TODAY?' past':'')+'"></span>'; });
       function px(day){ return (day-DAYS[0])*DAYW; }
-      if(tk.s<TODAY){ var oe=Math.min(tk.e,TODAY-1),x=px(tk.s),w=(oe-tk.s+1)*DAYW; html+='<div class="bar overdue" style="left:'+(x+2)+'px;width:'+(w-4)+'px"><span class="startdot"></span></div>'; }
-      if(tk.e>=TODAY){ var ps=Math.max(tk.s,TODAY),x2=px(ps),w2=(tk.e-ps+1)*DAYW; html+='<div class="bar planned" style="left:'+(x2+2)+'px;width:'+(w2-4)+'px">'+(tk.s>=TODAY?'<span class="startdot"></span>':'')+'</div>'; }
+      // left of today = overdue (hollow red); at/after — or a month with no
+      // "today" (the future) — = planned (blue)
+      if(TODAY!==null&&tk.s<TODAY){ var oe=Math.min(tk.e,TODAY-1),x=px(tk.s),w=(oe-tk.s+1)*DAYW; html+='<div class="bar overdue" style="left:'+(x+2)+'px;width:'+(w-4)+'px"><span class="startdot"></span></div>'; }
+      if(TODAY===null||tk.e>=TODAY){ var ps=(TODAY===null)?tk.s:Math.max(tk.s,TODAY),x2=px(ps),w2=(tk.e-ps+1)*DAYW; html+='<div class="bar planned" style="left:'+(x2+2)+'px;width:'+(w2-4)+'px">'+((TODAY===null||tk.s>=TODAY)?'<span class="startdot"></span>':'')+'</div>'; }
       html+='</div></div></div>';
     });
     t.innerHTML=html;
-    var frozenW=130+44+44, lineX=(TODAY-DAYS[0])*DAYW; // left edge of today cell
-    var line=document.createElement('div'); line.className='today-line'; line.style.left=(frozenW+lineX)+'px';
-    line.innerHTML='<span class="today-flag">วันนี้</span>'; t.appendChild(line);
-  })();
+    if(TODAY!==null){
+      var line=document.createElement('div'); line.className='today-line';
+      line.style.left=(FROZENW+(TODAY-DAYS[0])*DAYW)+'px';
+      line.innerHTML='<span class="today-flag">วันนี้</span>'; t.appendChild(line);
+    }
+    var leg=root.querySelector('[data-leg-today]');
+    if(leg) leg.style.display=TODAY===null?'none':'';
+  }
+
+  function setGanttMonth(m){
+    if(ganttMonth===m) return;
+    ganttMonth=m;
+    root.querySelectorAll('.mseg').forEach(function(b){
+      var on=(b.dataset.m===m);
+      b.classList.toggle('active',on);
+      b.setAttribute('aria-pressed',on?'true':'false');
+    });
+    buildGantt(m);
+    root.querySelector('#tjrGanttScroll').scrollLeft=0;
+  }
+  root.querySelectorAll('.mseg').forEach(function(b){ b.addEventListener('click',function(){ setGanttMonth(b.dataset.m); }); });
 
   function scrollToday(){
+    // "today" lives in the June window — switch there first if needed
+    if(ganttMonth!=='6') setGanttMonth('6');
     var sc=root.querySelector('#tjrGanttScroll'); if(!sc) return;
-    var frozenW=130+44+44,DAYW=26,TODAY=17,first=14;
-    var target=frozenW+(TODAY-first)*DAYW-(sc.clientWidth-frozenW)/2;
-    sc.scrollTo({left:Math.max(0,target),behavior:'smooth'});
+    var cfg=GANTT['6'];
+    // center of the today CELL, positioned mid of the VISIBLE axis area (the
+    // sticky ledger columns permanently cover the left FROZENW px of the view)
+    var lineX=(cfg.today-cfg.days[0])*DAYW + DAYW/2;
+    var target=lineX-(sc.clientWidth-FROZENW)/2;
+    var reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+    sc.scrollTo({left:Math.max(0,target),behavior:reduce?'auto':'smooth'});
   }
   var tj=root.querySelector('#tjrTodayJump'); if(tj) tj.addEventListener('click',scrollToday);
+
+  /* ---------- PLAN VIEWS: progress + report ---------- */
+  (function(){
+    var cfg=GANTT['6'];
+    var prog=root.querySelector('[data-progress-card]');
+    var html='<div class="gantt-head"><div class="h2">📈 ความก้าวหน้า (แผน vs จริง)</div></div>';
+    cfg.tasks.forEach(function(tk){
+      var total=tk.e-tk.s+1, done=Math.min(Math.max(cfg.today-tk.s,0),total);
+      var p=Math.round(done/total*100);
+      html+='<div class="prog-row"><div class="prog-top"><span class="prog-name">'+tk.name+' <span class="gc-range tnum">'+tk.range+'</span></span>'
+          +'<span class="prog-pct tnum">แผน '+p+'% · จริง 0%</span></div>'
+          +'<div class="prog-track" role="img" aria-label="แผน '+p+'% จริง 0%"><i style="width:'+p+'%"></i></div></div>';
+    });
+    prog.innerHTML=html;
+    var rep=root.querySelector('[data-report-card]');
+    var totalW=0; cfg.tasks.forEach(function(tk){ totalW+=parseFloat(tk.w); });
+    rep.innerHTML='<div class="gantt-head"><div class="h2">🗺 รายงานสรุปโครงการ</div></div>'
+      +'<div class="report-list">'
+      +'<div class="report-row"><span class="report-k">โครงการ</span><span class="report-v" style="font-family:var(--font)">Scania HDY</span></div>'
+      +'<div class="report-row"><span class="report-k">ช่วงดำเนินการ</span><span class="report-v">2026-06-01 → 2026-07-22</span></div>'
+      +'<div class="report-row"><span class="report-k">งานทั้งโครงการ</span><span class="report-v">13 รายการ (45 วัน)</span></div>'
+      +'<div class="report-row"><span class="report-k">งานในช่วงที่แสดง</span><span class="report-v">'+cfg.tasks.length+' รายการ · น้ำหนักรวม '+totalW.toFixed(2)+'</span></div>'
+      +'<div class="report-row"><span class="report-k">แผนสะสม ณ วันนี้</span><span class="report-v">24.4%</span></div>'
+      +'<div class="report-row"><span class="report-k">ผลงานจริงสะสม</span><span class="report-v late">0% · ▼ ล่าช้า</span></div>'
+      +'</div>';
+  })();
+  root.querySelectorAll('#tjrScreenC .tab[data-view]').forEach(function(b){
+    b.addEventListener('click',function(){
+      root.querySelectorAll('#tjrScreenC .tab').forEach(function(q){ var on=(q===b); q.classList.toggle('active',on); q.setAttribute('aria-pressed',on?'true':'false'); });
+      root.querySelectorAll('.plan-view').forEach(function(v){ v.classList.toggle('show',v.dataset.planView===b.dataset.view); });
+      if(b.dataset.view==='gantt') setTimeout(scrollToday,60);
+    });
+  });
+
+  /* ---------- EXCEL (CSV) EXPORT — actually downloads ---------- */
+  root.querySelector('.tab-excel').addEventListener('click',function(){
+    var cfg=GANTT[ganttMonth];
+    var rows=[['รายการงาน','ช่วงงาน','น้ำหนัก','%จริง','สถานะ']];
+    cfg.tasks.forEach(function(tk){
+      var late=cfg.today!==null&&tk.s<cfg.today;
+      rows.push([tk.name,tk.range.replace(/→/g,'->'),tk.w,'0.00',late?'ล่าช้า':'ตามแผน']);
+    });
+    var csv=rows.map(function(r){ return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(','); }).join('\r\n');
+    // UTF-8 BOM so Excel opens Thai text correctly
+    var blob=new Blob([String.fromCharCode(0xFEFF)+csv],{type:'text/csv;charset=utf-8'});
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='tongjai-plan-'+(ganttMonth==='6'?'2026-06':'2026-07')+'.csv';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); },0);
+    toast('ดาวน์โหลดแผนงานเป็น CSV แล้ว 📥');
+  });
+
+  buildGantt('6');
 })();
 </script>

@@ -24,16 +24,23 @@ const C = {
 
 // ============================================================================
 // Postback state codec  —  compact querystring, asserted ≤ 300 chars.
-// Short keys: s=step, t=entity(p|c), c=category(o|l), a=amount, d=date, r=ref.
-// rawText and merchant are NEVER carried (merchant is display-only, re-shown
-// from the card; it stays out of postback data to protect the 300-char budget).
+// Short keys: s=step, t=entity(p|c), c=category(o|l), a=amount, d=date, r=ref,
+//             m=slipId (short hash of the LINE image messageId — the dedupe
+//             identity that makes redeliveries AND confirm re-taps idempotent),
+//             n=merchant (payee name, best-effort: URL-encoded Thai is ~9 chars
+//             per character, so it is the FIRST field dropped on overflow).
+// rawText is NEVER carried.
 // ============================================================================
 
 /**
- * Encode forward state into a postback data string. Truncates ref and asserts
- * the final length is ≤ 300; if it somehow overflows, ref is dropped.
+ * Encode forward state into a postback data string, asserted ≤ 300 chars.
+ * Mandatory fields (step, entity, category, amount, date, slipId) always fit
+ * (~55 chars worst case). The two long tails — ref (ledger identity) first,
+ * then merchant (display nicety) — each get TRUNCATED to the remaining budget
+ * at an encoded-character boundary rather than silently dropped outright, so
+ * a long Thai ref still lands in the ledger, just shortened.
  *
- * @param {object} st  { s, t?, c?, amount?, date?, ref? }
+ * @param {object} st  { s, t?, c?, amount?, date?, ref?, slipId?, merchant? }
  * @returns {string}
  */
 export function encodeState(st) {
@@ -42,29 +49,55 @@ export function encodeState(st) {
   if (st.c) parts.push(`c=${st.c}`); // o = ค่าของ(expense), l = ค่าแรง(withholding)
   if (st.amount != null) parts.push(`a=${encodeURIComponent(String(st.amount))}`);
   if (st.date) parts.push(`d=${encodeURIComponent(st.date)}`);
-  if (st.ref) {
-    const ref = String(st.ref).slice(0, 40);
-    parts.push(`r=${encodeURIComponent(ref)}`);
-  }
+  if (st.slipId) parts.push(`m=${encodeURIComponent(String(st.slipId).slice(0, 16))}`);
   let data = parts.join("&");
-  if (data.length > 300) {
-    // Last-resort: drop ref entirely to stay under the hard cap.
-    data = parts.filter((p) => !p.startsWith("r=")).join("&");
+  if (st.ref) {
+    const fitted = fitEncoded(String(st.ref).slice(0, 40), 300 - data.length - 3);
+    if (fitted) data += `&r=${fitted}`;
+  }
+  if (st.merchant && st.merchant !== "-") {
+    const fitted = fitEncoded(String(st.merchant).slice(0, 40), 300 - data.length - 3);
+    if (fitted) data += `&n=${fitted}`;
   }
   return data;
 }
 
+/**
+ * URL-encode `raw` one character at a time, stopping before the encoded
+ * length would exceed `budget`. Always cuts at a whole-character boundary so
+ * the result decodes cleanly (Thai chars encode to 9 chars each).
+ */
+function fitEncoded(raw, budget) {
+  if (budget <= 0) return "";
+  let out = "";
+  for (const ch of raw) {
+    const enc = encodeURIComponent(ch);
+    if (out.length + enc.length > budget) break;
+    out += enc;
+  }
+  return out;
+}
+
 // Short wire key → state field. Keeps postback data compact (≤300 chars) while
 // decoding back to readable field names.
-const KEY_MAP = { s: "s", t: "t", c: "c", a: "amount", d: "date", r: "ref" };
+const KEY_MAP = {
+  s: "s",
+  t: "t",
+  c: "c",
+  a: "amount",
+  d: "date",
+  r: "ref",
+  m: "slipId",
+  n: "merchant",
+};
 
 /**
  * Decode a postback data string back into state.
  * @param {string} data
- * @returns {object} { s, t, c, amount, date, ref }  (all strings)
+ * @returns {object} { s, t, c, amount, date, ref, slipId, merchant }  (all strings)
  */
 export function decodeState(data) {
-  const out = { s: "", t: "", c: "", amount: "", date: "", ref: "" };
+  const out = { s: "", t: "", c: "", amount: "", date: "", ref: "", slipId: "", merchant: "" };
   if (!data) return out;
   for (const pair of data.split("&")) {
     const i = pair.indexOf("=");
@@ -109,15 +142,23 @@ function ellipsize(s, max) {
  * Footer: step-1 postback buttons 👤 บุคคล / 🏢 บริษัท.
  *
  * @param {object} d  normalized slip data { amount, currency, merchant, date, ref }
+ * @param {string=} slipId  short hash of the LINE image messageId (dedupe identity)
  * @returns {object}  LINE flex message object
  */
-export function receiptFlex(d) {
+export function receiptFlex(d, slipId) {
   const dateText = d.date || "-";
   const refText = d.ref ? ellipsize(d.ref, 28) : "-";
   const merchantText = ellipsize(d.merchant, 40);
 
   // step-1 state carried into both buttons (entity chosen on click).
-  const baseState = { s: 1, amount: d.amount, date: d.date, ref: d.ref };
+  const baseState = {
+    s: 1,
+    amount: d.amount,
+    date: d.date,
+    ref: d.ref,
+    slipId,
+    merchant: d.merchant,
+  };
 
   return {
     type: "flex",
@@ -234,11 +275,19 @@ export function receiptFlex(d) {
  *   📦 ค่าของ (บันทึกเป็นรายจ่าย)   →  expense
  *   💼 ค่าแรง (หัก ณ ที่จ่าย)        →  withholding
  *
- * @param {object} st  decoded state from step 1 (has t, amount, date, ref)
+ * @param {object} st  decoded state from step 1 (has t, amount, date, ref, slipId, merchant)
  * @returns {object} LINE flex message object
  */
 export function categoryFlex(st) {
-  const carry = { s: 2, t: st.t, amount: st.amount, date: st.date, ref: st.ref };
+  const carry = {
+    s: 2,
+    t: st.t,
+    amount: st.amount,
+    date: st.date,
+    ref: st.ref,
+    slipId: st.slipId,
+    merchant: st.merchant,
+  };
   return {
     type: "flex",
     altText: "เลือกประเภทค่าจ่าย",

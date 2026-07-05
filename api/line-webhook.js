@@ -7,7 +7,7 @@
 //   image message  → download slip → Groq vision OCR → Flex "ใบเสร็จ" card
 //                    + step-1 buttons (👤 บุคคล / 🏢 บริษัท)
 //   postback s=1   → step-2 buttons (📦 ค่าของ / 💼 ค่าแรง)
-//   postback s=2   → persist ledger (KV if set) → "✅ บันทึกเป็นใบรับรองแทนแล้วครับ"
+//   postback s=2   → persist ledger (KV or Blob if set) → "✅ บันทึกเป็นใบรับรองแทนแล้วครับ"
 //   follow         → friendly Thai greeting
 //   text / other   → short usage hint
 //
@@ -15,8 +15,10 @@
 //   - x-line-signature verified over the EXACT raw body BEFORE JSON.parse.
 //   - Always returns HTTP 200 quickly (LINE treats non-2xx as failure & retries),
 //     except a 401 on signature mismatch.
-//   - Idempotent: the in-memory seen-set + KV-layer SET-NX dedupe stop double
-//     records, while still letting a redelivered persist step retry safely.
+//   - Idempotent: the in-memory seen-set + store-layer dedupe (KV SET-NX or
+//     Blob dedupeKey scan, both keyed by the slip's content identity) stop
+//     double records — from redeliveries AND from a user re-tapping the
+//     confirm button — while still letting a redelivered persist step retry.
 //   - Reply token is single-use & short-lived → replyOrPush falls back to push.
 //   - Secrets read from process.env only; values are NEVER logged.
 //
@@ -24,13 +26,14 @@
 // `await request.text()` returns the byte-exact raw body required for HMAC,
 // while still giving us the full Node runtime (node:crypto, Buffer, fetch).
 
+import crypto from "node:crypto";
 import {
   verifySignature,
   replyOrPush,
   getMessageContent,
 } from "./_lib/line.js";
 import { parseSlip } from "./_lib/ocr.js";
-import { saveRecord, kvEnabled } from "./_lib/store.js";
+import { saveRecord, storageEnabled } from "./_lib/store.js";
 import {
   receiptFlex,
   categoryFlex,
@@ -109,16 +112,17 @@ async function handleEvent(event, env) {
     decodeState((event.postback && event.postback.data) || "").s === "2";
 
   // Idempotency. The persist step (postback s=2) is the only event with a
-  // durable side effect, and it dedupes at the KV layer (SET NX keyed by the
-  // record). So we deliberately LET ITS REDELIVERIES THROUGH — a transient KV
-  // blip on the first delivery would otherwise lose the record forever, since
-  // the redelivery is LINE's only retry. For every other event type a
-  // redelivery is pure noise and is skipped.
+  // durable side effect, and it dedupes at the store layer (keyed by the slip's
+  // content identity). So we deliberately LET ITS REDELIVERIES THROUGH — a
+  // transient storage blip on the first delivery would otherwise lose the
+  // record forever, since the redelivery is LINE's only retry. For every other
+  // event type a redelivery is pure noise and is skipped.
   if (redelivered && !isPersistStep) return;
 
   // The in-memory seen-set guards against fast double-delivery within a warm
-  // instance. We skip it for the persist step (KV SET NX is the real guard there
-  // and must remain reachable so a failed first save can be retried).
+  // instance. We skip it for the persist step (the store-layer dedupe is the
+  // real guard there and must remain reachable so a failed first save can be
+  // retried).
   if (id && !isPersistStep) {
     if (seenEventIds.has(id)) return;
     rememberEvent(id);
@@ -137,10 +141,21 @@ async function handleEvent(event, env) {
   }
 }
 
+/**
+ * Where a push-fallback should go: back to the SAME conversation the event
+ * came from. In a group/room that is the group/room id — pushing to the
+ * sender's userId would land the bot's answer in their private chat (or
+ * nowhere, if they never added the bot as a friend).
+ */
+function pushTarget(source) {
+  if (!source) return "";
+  return source.groupId || source.roomId || source.userId || "";
+}
+
 // ---- message events --------------------------------------------------------
 async function handleMessage(event, env) {
   const token = env.LINE_CHANNEL_ACCESS_TOKEN;
-  const userId = event.source && event.source.userId;
+  const userId = pushTarget(event.source);
   const replyToken = event.replyToken;
   const msg = event.message || {};
 
@@ -187,12 +202,14 @@ async function handleImage(messageId, replyToken, userId, env, token) {
       });
     }
 
-    // Reply with the polished "ใบเสร็จ" Flex card + step-1 buttons.
+    // Reply with the polished "ใบเสร็จ" Flex card + step-1 buttons. The slipId
+    // (short hash of the image messageId) rides along in the postback state so
+    // the final save can dedupe confirm re-taps of this same slip.
     return replyOrPush({
       replyToken,
       userId,
       token,
-      messages: [receiptFlex(result.data)],
+      messages: [receiptFlex(result.data, slipIdFor(messageId))],
     });
   } catch (err) {
     // LINE 202 / non-image body = the (often large) image is still processing.
@@ -222,7 +239,10 @@ async function handleImage(messageId, replyToken, userId, env, token) {
 // ---- postback events (the stateless two-step flow) -------------------------
 async function handlePostback(event, env) {
   const token = env.LINE_CHANNEL_ACCESS_TOKEN;
-  const userId = event.source && event.source.userId;
+  // Push fallback goes to the conversation; the RECORD keeps the tapping
+  // user's own id (who confirmed this expense), never a group id.
+  const userId = pushTarget(event.source);
+  const recordUserId = event.source && event.source.userId;
   const replyToken = event.replyToken;
   const st = decodeState((event.postback && event.postback.data) || "");
 
@@ -238,15 +258,15 @@ async function handlePostback(event, env) {
 
   // Step 2 done (category chosen) → persist + confirm.
   if (st.s === "2") {
-    const record = buildRecord(st, userId, event.webhookEventId);
-    // Persist only if KV configured; otherwise gracefully skipped.
+    const record = buildRecord(st, recordUserId, event.webhookEventId);
+    // Persist only if a storage backend (KV or Blob) is configured.
     const saved = await saveRecord(record, env);
 
-    // Only confirm "saved" when the entry is actually safe: either KV is
+    // Only confirm "saved" when the entry is actually safe: either storage is
     // intentionally not configured (interactive-only mode), or the write
-    // succeeded / was already persisted. If KV is on but the write FAILED,
+    // succeeded / was already persisted. If storage is on but the write FAILED,
     // tell the user it didn't save so they can retry — never lie about it.
-    if (kvEnabled(env) && !saved.ok) {
+    if (storageEnabled(env) && !saved.ok) {
       return replyOrPush({
         replyToken,
         userId,
@@ -272,7 +292,7 @@ async function handlePostback(event, env) {
 // ---- follow event ----------------------------------------------------------
 async function handleFollow(event, env) {
   const token = env.LINE_CHANNEL_ACCESS_TOKEN;
-  const userId = event.source && event.source.userId;
+  const userId = pushTarget(event.source);
   const replyToken = event.replyToken;
   return replyOrPush({
     replyToken,
@@ -294,9 +314,10 @@ async function handleFollow(event, env) {
  * Build the ledger record from decoded postback state.
  *
  * `entity` / `category` map from the compact wire codes to a small allowlist;
- * `amount` is coerced to a finite, non-negative number. webhookEventId is
- * carried as a transport-only field so the KV layer can dedupe redeliveries —
- * it is stripped before the record is persisted.
+ * `amount` is coerced to a finite, non-negative number. webhookEventId and
+ * slipId are carried as transport-only fields so the store layer can dedupe
+ * redeliveries AND confirm-button re-taps — both are stripped before the
+ * record is persisted (the store keeps only a derived dedupeKey hash).
  */
 function buildRecord(st, userId, webhookEventId) {
   const entity = st.t === "c" ? "company" : "person"; // p|c
@@ -306,7 +327,7 @@ function buildRecord(st, userId, webhookEventId) {
   return {
     amount,
     currency: "THB",
-    merchant: "", // merchant is display-only; not carried in postback data
+    merchant: st.merchant || "", // best-effort; dropped from postback only on overflow
     date: st.date || "",
     ref: st.ref || "",
     entity, // person | company
@@ -314,7 +335,17 @@ function buildRecord(st, userId, webhookEventId) {
     lineUserId: userId || "",
     createdAt: new Date().toISOString(),
     webhookEventId: webhookEventId || "", // transport-only; stripped on persist
+    slipId: st.slipId || "", // transport-only; stripped on persist
   };
+}
+
+/** Short, stable dedupe identity for one slip image (safe for postback data). */
+function slipIdFor(messageId) {
+  return crypto
+    .createHash("sha256")
+    .update(String(messageId))
+    .digest("hex")
+    .slice(0, 10);
 }
 
 /** Bounded in-memory dedupe set. */

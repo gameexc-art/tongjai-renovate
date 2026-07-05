@@ -531,6 +531,13 @@ $("gateForm").addEventListener("submit", function(e){
   e.preventDefault();
   var candidate = $("pw").value.trim();
   if(!candidate){ gateMessage("err","กรุณาใส่รหัสผ่าน"); $("pw").focus(); return; }
+  // Non-ASCII input (e.g. Thai keyboard layout left on) can never be the
+  // passcode, and fetch() would throw on the header value — reject it here
+  // with an accurate message instead of a misleading network error.
+  if(/[^\x20-\x7E]/.test(candidate)){
+    gateMessage("err","รหัสไม่ถูกต้อง — รหัสผ่านเป็นตัวอักษรอังกฤษ/ตัวเลข (เช็คภาษาแป้นพิมพ์)");
+    $("pw").focus(); $("pw").select(); return;
+  }
   clearGateMessage();
   setGateLoading(true);
   apiGet(candidate).then(function(r){
@@ -549,6 +556,9 @@ $("gateForm").addEventListener("submit", function(e){
     } else if(r.status === 503){
       setGateLoading(false);
       gateMessage("warn","ยังไม่ได้เปิดใช้งาน (ตั้ง DASHBOARD_TOKEN ใน Vercel)");
+    } else if(r.status === 502){
+      setGateLoading(false);
+      gateMessage("err","ระบบเก็บข้อมูลขัดข้องชั่วคราว ลองใหม่อีกครั้ง");
     } else {
       setGateLoading(false);
       if(typeof console!=="undefined") console.warn("dashboard: unexpected status", Number(r.status)||0);
@@ -620,6 +630,8 @@ function loadFromServer(){
       token = null;
       showGate();
       gateMessage("warn","ยังไม่ได้เปิดใช้งาน (ตั้ง DASHBOARD_TOKEN ใน Vercel)");
+    } else if(r.status === 502){
+      renderError("ระบบเก็บข้อมูลขัดข้องชั่วคราว — ข้อมูลยังอยู่ครบ ลองรีเฟรชอีกครั้ง");
     } else {
       if(typeof console!=="undefined") console.warn("dashboard: unexpected status", Number(r.status)||0);
       renderError("โหลดข้อมูลไม่สำเร็จ ลองใหม่อีกครั้ง");
@@ -727,15 +739,19 @@ function buildSummary(s){
     meta:"ค่าของ " + s.matCount + " · ค่าแรง " + s.labCount
   }));
 
-  // กำไร / ขาดทุน — รายรับ − รายจ่าย (negative, red, ▼)
+  // กำไร / ขาดทุน — รายรับ − รายจ่าย. Loss styling (red tint, ▼) only when an
+  // actual loss exists; an empty ledger at ฿0.00 renders neutral, not "in the red".
+  var isLoss = s.profit < 0;
   grid.appendChild(card({
-    bar:"bar-red", loss:true, label:"กำไร / ขาดทุน", neg:true,
+    bar: isLoss ? "bar-red" : "bar-graphite", loss:isLoss, label:"กำไร / ขาดทุน", neg:isLoss,
     amount:function(a){
-      var arrow = el("span","loss-arrow"); arrow.setAttribute("aria-hidden","true"); arrow.textContent="▼";
-      a.appendChild(arrow); a.appendChild(document.createTextNode(" "));
+      if(isLoss){
+        var arrow = el("span","loss-arrow"); arrow.setAttribute("aria-hidden","true"); arrow.textContent="▼";
+        a.appendChild(arrow); a.appendChild(document.createTextNode(" "));
+      }
       bahtInto(a, s.profit, {dec:2});
       // settle the arrow after paint
-      requestAnimationFrame(function(){ requestAnimationFrame(function(){ arrow.classList.add("settled"); }); });
+      if(isLoss) requestAnimationFrame(function(){ requestAnimationFrame(function(){ a.querySelector(".loss-arrow").classList.add("settled"); }); });
     },
     meta:"รายรับ − รายจ่าย"
   }));
@@ -789,8 +805,13 @@ function buildFilters(s){
     b.appendChild(document.createTextNode(" " + d.label + " (" + d.n + ")"));
     b.addEventListener("click", function(){
       currentFilter = d.key;
+      // paint() rebuilds the pill row, destroying the focused button — keep the
+      // scroll position AND put keyboard focus back on the same pill.
+      var keepScroll = $("bodyScroll").scrollTop;
       paint();
-      $("bodyScroll").scrollTop = $("bodyScroll").scrollTop; // keep position
+      $("bodyScroll").scrollTop = keepScroll;
+      var again = $("content").querySelector('.fpill.active');
+      if(again) again.focus();
     });
     row.appendChild(b);
   });

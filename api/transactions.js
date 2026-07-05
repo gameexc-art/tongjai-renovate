@@ -56,10 +56,10 @@ function presentedToken(request) {
   return x ? x.trim() : "";
 }
 
-/** Strip PII (lineUserId) before sending records to the dashboard. */
+/** Strip PII (lineUserId) and internal fields before sending to the dashboard. */
 function sanitize(record) {
   if (!record || typeof record !== "object") return record;
-  const { lineUserId, ...rest } = record;
+  const { lineUserId, dedupeKey, ...rest } = record;
   return rest;
 }
 
@@ -95,7 +95,18 @@ export async function GET(request) {
   try {
     transactions = await listRecords(env);
   } catch {
-    transactions = [];
+    transactions = null;
+  }
+  // null = the storage backend FAILED (timeout/outage). Surface it as an error
+  // instead of an empty ledger, so the dashboard never silently shows ฿0.
+  if (transactions === null) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "ledger read failed" }),
+      {
+        status: 502,
+        headers: { ...cors, "content-type": "application/json; charset=utf-8" },
+      }
+    );
   }
   const safe = transactions.map(sanitize);
   return new Response(

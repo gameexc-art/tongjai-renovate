@@ -70,20 +70,25 @@ const fmt = (n, dec) =>
 function CountUp({ value, dec = 2, onSettle }) {
   const [disp, setDisp] = useState("0");
   const ref = useRef();
+  // latest onSettle without retriggering the tween; fires exactly once per value
+  const settleRef = useRef(onSettle);
+  settleRef.current = onSettle;
   useEffect(() => {
+    let settled = false;
+    const settle = () => { if (!settled) { settled = true; settleRef.current && settleRef.current(); } };
     const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
-    if (reduce) { setDisp(fmt(value, dec)); onSettle && onSettle(); return; }
+    if (reduce) { setDisp(fmt(value, dec)); settle(); return; }
     const dur = 420, start = performance.now();
     const step = (t) => {
       const p = Math.min(1, (t - start) / dur), e = 1 - Math.pow(1 - p, 3);
       setDisp(fmt(value * e, dec));
       if (p < 1) ref.current = requestAnimationFrame(step);
-      else onSettle && onSettle();
+      else settle();
     };
     ref.current = requestAnimationFrame(step);
     // safety net for throttled rAF (backgrounded tab): guarantee settle fires
-    const settleGuard = onSettle ? setTimeout(onSettle, 700) : null;
-    return () => { cancelAnimationFrame(ref.current); if (settleGuard) clearTimeout(settleGuard); };
+    const settleGuard = setTimeout(settle, 700);
+    return () => { cancelAnimationFrame(ref.current); clearTimeout(settleGuard); };
   }, [value, dec]);
   return <span style={num}>{disp}</span>;
 }
@@ -203,13 +208,19 @@ function ScreenA({ sendPrompt }) {
     { date: "2026-06-11", title: "ค่าเช่านั่งร้าน", kind: "mat", amount: "3,200.00", status: "pending" },
   ];
   const filters = [
-    { icon: "📋", label: "ทั้งหมด" },
-    { icon: "💚", label: "รายรับ" },
-    { icon: "🔴", label: "รายจ่าย" },
-    { icon: "📊", label: "สรุปภาษี" },
+    { icon: "📋", label: "ทั้งหมด", key: "all" },
+    { icon: "💚", label: "รายรับ", key: "income" },
+    { icon: "🔴", label: "รายจ่าย", key: "expense" },
+    { icon: "📊", label: "สรุปภาษี", key: "tax" },
   ];
   const [activeFilter, setActiveFilter] = useState(0);
   const [lossSettled, setLossSettled] = useState(false);
+  // all/expense → every demo row (they are all expenses); tax → only
+  // "หัก ณ ที่จ่าย" rows; income → none (the bot records expenses only)
+  const fkey = filters[activeFilter].key;
+  const visible = fkey === "all" || fkey === "expense" ? rows
+    : fkey === "tax" ? rows.filter((r) => r.status === "wht")
+    : [];
   return (
     <section aria-label="การเงินโครงการ">
       <h2 className="sr-only">สรุปการเงินโครงการ: รายจ่ายสุทธิ 141,520.60 บาท ขาดทุน</h2>
@@ -217,7 +228,7 @@ function ScreenA({ sendPrompt }) {
       <div style={{ height: 32, display: "flex", alignItems: "center", gap: 6, padding: "0 16px",
         background: "#FBFAF7", borderBottom: "1px solid #EAE7DF", fontSize: 12, fontWeight: 500, color: "#646B75" }}>
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 12L12 1M3.5 12V9.5M6 12V8M8.5 12V10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" /></svg>
-        <span>คลิกชื่องาน = ไปวันเริ่มงาน</span><span style={{ opacity: 0.5 }}>·</span><span>คลิกช่องวัน = บันทึก</span>
+        <span>รายการล่าสุด <span style={num}>2026-06-11</span></span><span style={{ opacity: 0.5 }}>·</span><span>แตะปุ่มกรองเพื่อเลือกดู</span>
       </div>
 
       <div style={{ padding: "0 16px 24px" }}>
@@ -241,7 +252,7 @@ function ScreenA({ sendPrompt }) {
             {/* loss magnitude tweens, ▼ reveals only on settle = the "count down into red" felt moment */}
             <div style={{ fontSize: 24, fontWeight: 800, lineHeight: 1.2, letterSpacing: "-0.02em", color: "#C8322B", marginTop: 8, display: "flex", alignItems: "baseline", gap: 4 }}>
               <span aria-hidden="true" style={{ opacity: lossSettled ? 1 : 0, transition: "opacity .25s cubic-bezier(.22,.61,.36,1)" }}>▼</span>
-              <Baht neg>-฿</Baht><CountUp value={141520.6} onSettle={() => setLossSettled(true)} />
+              <Baht neg>−฿</Baht><CountUp value={141520.6} onSettle={() => setLossSettled(true)} />
             </div>
           </SummaryCard>
           <SummaryCard label="รายการทั้งหมด" bar="orange" meta="ทั้งรายรับและรายจ่าย"
@@ -266,11 +277,18 @@ function ScreenA({ sendPrompt }) {
         </div>
 
         {/* transactions */}
-        <div style={{ fontSize: 12, fontWeight: 700, color: "#646B75", padding: "14px 2px 8px", ...num }}>2026-06-11</div>
-        <div style={{ background: "#fff", border: "1px solid #DBD9D1", borderRadius: 14, boxShadow: "0 1px 2px rgba(21,24,30,.04),0 1px 1px rgba(21,24,30,.03)", overflow: "hidden" }}>
-          {rows.map((r, i) => (
-            <TxRow key={i} {...r} isLast={i === rows.length - 1} />
+        {visible.length > 0 && (
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#646B75", padding: "14px 2px 8px", ...num }}>2026-06-11</div>
+        )}
+        <div style={{ background: "#fff", border: "1px solid #DBD9D1", borderRadius: 14, boxShadow: "0 1px 2px rgba(21,24,30,.04),0 1px 1px rgba(21,24,30,.03)", overflow: "hidden", marginTop: visible.length === 0 ? 14 : 0 }}>
+          {visible.map((r, i) => (
+            <TxRow key={r.title} {...r} isLast={i === visible.length - 1} />
           ))}
+          {visible.length === 0 && (
+            <div role="status" style={{ padding: "26px 16px", textAlign: "center", fontSize: 13, fontWeight: 500, color: "#646B75" }}>
+              ไม่มีรายการรายรับในช่วงนี้ — บอทบันทึกรายจ่ายเท่านั้น
+            </div>
+          )}
         </div>
       </div>
     </section>
@@ -307,7 +325,22 @@ function ChatBtn({ children, dim, onClick }) {
   );
 }
 
-function ScreenB({ sendPrompt, goBack }) {
+function ScreenB({ sendPrompt, goBack, showToast }) {
+  // live demo messages appended after the scripted transcript
+  const [extra, setExtra] = useState([]);
+  const [draft, setDraft] = useState("");
+  const timeNow = () => new Date().toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit" });
+  const send = () => {
+    const text = draft.trim();
+    if (!text) return;
+    sendPrompt(text);
+    setExtra((xs) => [...xs, { side: "right", text, time: timeNow() }]);
+    setDraft("");
+    setTimeout(() => {
+      // same reply the real LINE bot gives for a text message
+      setExtra((xs) => [...xs, { side: "left", text: "ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸", time: timeNow() }]);
+    }, 600);
+  };
   return (
     <section aria-label="แชทบอท NONEAICE">
       <h2 className="sr-only">แชทบอท NONEAICE สำหรับบันทึกใบเสร็จ</h2>
@@ -401,13 +434,22 @@ function ScreenB({ sendPrompt, goBack }) {
             </div>
             <span style={{ fontSize: 11, fontWeight: 500, color: "#A7AEB8", ...num }}>12:06</span>
           </div>
+
+          {/* live demo messages */}
+          {extra.map((m, i) => (
+            <div key={i} style={{ display: "flex", flexDirection: "column", maxWidth: "78%", gap: 4, alignSelf: m.side === "right" ? "flex-end" : "flex-start", alignItems: m.side === "right" ? "flex-end" : "flex-start" }}>
+              <div style={{ background: m.side === "right" ? "#1F2630" : "#1A1F27", border: m.side === "right" ? "1px solid transparent" : "1px solid #2C333E", borderRadius: 18, borderTopLeftRadius: m.side === "left" ? 6 : 18, borderBottomRightRadius: m.side === "right" ? 6 : 18, padding: "12px 14px", color: "#ECEEF1", fontSize: 14 }}>{m.text}</div>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "#A7AEB8", ...num }}>{m.time}</span>
+            </div>
+          ))}
         </div>
 
-        {/* input */}
+        {/* input — functional demo mirroring the real bot's text handler */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", paddingBottom: "calc(10px + env(safe-area-inset-bottom))", background: "#1A1F27", borderTop: "1px solid #2C333E" }}>
-          <button aria-label="แนบไฟล์" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#232A34", color: "#A7AEB8", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 36px", cursor: "pointer" }}><Plus size={18} /></button>
-          <div style={{ flex: "1 1 auto", height: 38, borderRadius: 999, background: "#232A34", border: "1px solid #2C333E", padding: "0 14px", display: "flex", alignItems: "center", fontSize: 13, color: "#6B7480" }}>พิมพ์ข้อความ หรือส่งสลิป…</div>
-          <button aria-label="ส่ง" style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#1E5FCC", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 36px", cursor: "pointer" }}><Send size={16} /></button>
+          <button aria-label="แนบไฟล์" onClick={() => { sendPrompt("แนบสลิป"); showToast("เดโม — ส่งสลิปได้ที่บอท LINE NONEAICE ตัวจริง"); }} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#232A34", color: "#A7AEB8", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 36px", cursor: "pointer" }}><Plus size={18} /></button>
+          <input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") send(); }} placeholder="พิมพ์ข้อความ หรือส่งสลิป…" aria-label="พิมพ์ข้อความ"
+            style={{ flex: "1 1 auto", height: 38, borderRadius: 999, background: "#232A34", border: "1px solid #2C333E", padding: "0 14px", fontSize: 13, color: "#ECEEF1", fontFamily: FONT, outline: "none" }} />
+          <button aria-label="ส่ง" onClick={send} style={{ width: 36, height: 36, borderRadius: "50%", border: "none", background: "#1E5FCC", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 36px", cursor: "pointer" }}><Send size={16} /></button>
         </div>
       </div>
     </section>
@@ -417,24 +459,41 @@ function ScreenB({ sendPrompt, goBack }) {
 /* ===========================================================================
    SCREEN C — GANTT
    =========================================================================== */
-const DAYS = [14, 15, 16, 17, 18, 19, 20, 21, 22];
-const TODAY = 17, DAYW = 26;
-const TASKS = [
-  { name: "Scania Building", range: "06-08 → 06-12", w: "5.00", crit: false, s: 14, e: 15 },
-  { name: "Scania Building", range: "06-09 → 06-10", w: "3.00", crit: false, s: 15, e: 16 },
-  { name: "Scania Roof Drain", range: "06-14 → 06-20", w: "12.00", crit: true, s: 14, e: 20 },
-  { name: "Scania Building", range: "06-12 → 06-18", w: "8.00", crit: false, s: 17, e: 19 },
-  { name: "Scania Roof Drain", range: "06-13 → 06-17", w: "6.00", crit: false, s: 16, e: 21 },
-  { name: "Scania Electrical", range: "06-15 → 06-20", w: "4.00", crit: false, s: 18, e: 22 },
-  { name: "Scania Building", range: "06-16 → 06-22", w: "7.00", crit: false, s: 19, e: 22 },
-];
+/* month-switchable Gantt windows. `today` is null for a month the plumb line
+   is not in (the future) — every bar there renders planned-blue. */
+const GANTT = {
+  6: {
+    days: [14, 15, 16, 17, 18, 19, 20, 21, 22], today: 17,
+    tasks: [
+      { name: "Scania Building", range: "06-14 → 06-15", w: "5.00", crit: false, s: 14, e: 15 },
+      { name: "Scania Building", range: "06-15 → 06-16", w: "3.00", crit: false, s: 15, e: 16 },
+      { name: "Scania Roof Drain", range: "06-14 → 06-20", w: "12.00", crit: true, s: 14, e: 20 },
+      { name: "Scania Building", range: "06-17 → 06-19", w: "8.00", crit: false, s: 17, e: 19 },
+      { name: "Scania Roof Drain", range: "06-16 → 06-21", w: "6.00", crit: false, s: 16, e: 21 },
+      { name: "Scania Electrical", range: "06-18 → 06-22", w: "4.00", crit: false, s: 18, e: 22 },
+      { name: "Scania Building", range: "06-19 → 06-22", w: "7.00", crit: false, s: 19, e: 22 },
+    ],
+  },
+  7: {
+    days: [1, 2, 3, 4, 5, 6, 7, 8, 9], today: null,
+    tasks: [
+      { name: "Scania Roof Drain", range: "06-28 → 07-04", w: "6.00", crit: true, s: 1, e: 4 },
+      { name: "Scania Electrical", range: "07-01 → 07-06", w: "5.00", crit: false, s: 1, e: 6 },
+      { name: "Scania Painting", range: "07-03 → 07-09", w: "4.00", crit: false, s: 3, e: 9 },
+      { name: "Scania Building", range: "07-05 → 07-09", w: "7.00", crit: false, s: 5, e: 9 },
+    ],
+  },
+};
+const DAYW = 26;
 const FROZEN_W = 130 + 44 + 44;
 
-function GanttRow({ tk }) {
-  const px = (day) => (day - DAYS[0]) * DAYW;
-  const axisW = DAYS.length * DAYW;
-  const overdue = tk.s < TODAY ? { left: px(tk.s) + 2, width: (Math.min(tk.e, TODAY - 1) - tk.s + 1) * DAYW - 4 } : null;
-  const planned = tk.e >= TODAY ? { left: px(Math.max(tk.s, TODAY)) + 2, width: (tk.e - Math.max(tk.s, TODAY) + 1) * DAYW - 4, dot: tk.s >= TODAY } : null;
+function GanttRow({ tk, days, today }) {
+  const px = (day) => (day - days[0]) * DAYW;
+  const axisW = days.length * DAYW;
+  const overdue = today !== null && tk.s < today ? { left: px(tk.s) + 2, width: (Math.min(tk.e, today - 1) - tk.s + 1) * DAYW - 4 } : null;
+  const planned = today === null || tk.e >= today
+    ? (() => { const ps = today === null ? tk.s : Math.max(tk.s, today); return { left: px(ps) + 2, width: (tk.e - ps + 1) * DAYW - 4, dot: today === null || tk.s >= today }; })()
+    : null;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "130px 44px 44px 1fr", alignItems: "stretch", borderBottom: "1px solid #EAE7DF", position: "relative", zIndex: 1 }}>
       <div style={{ position: "sticky", left: 0, background: "#fff", zIndex: 3, borderRight: "1px solid #EAE7DF", padding: 8, display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 46 }}>
@@ -449,9 +508,9 @@ function GanttRow({ tk }) {
       </div>
       <div style={{ padding: 0 }}>
         <div style={{ position: "relative", height: 46, display: "flex", width: axisW }}>
-          {DAYS.map((d) => (
+          {days.map((d) => (
             <span key={d} style={{ width: DAYW, flex: `0 0 ${DAYW}px`, borderLeft: "1px dotted #EAE7DF",
-              background: d === TODAY ? "rgba(226,59,51,.06)" : d < TODAY ? "rgba(0,0,0,.012)" : "transparent" }} />
+              background: today !== null && d === today ? "rgba(226,59,51,.06)" : today !== null && d < today ? "rgba(0,0,0,.012)" : "transparent" }} />
           ))}
           {overdue && (
             <div style={{ position: "absolute", top: 13, height: 20, borderRadius: 6, left: overdue.left, width: overdue.width, background: "transparent", border: "1.5px solid #E23B33", display: "flex", alignItems: "center" }}>
@@ -469,13 +528,21 @@ function GanttRow({ tk }) {
   );
 }
 
-function ScreenC() {
+function ScreenC({ showToast }) {
   const scrollRef = useRef();
-  const [month, setMonth] = useState(0);
+  const [month, setMonth] = useState(6);
+  const cfg = GANTT[month];
   const scrollToday = useCallback(() => {
+    // "today" lives in the June window — switch there first if needed
+    setMonth(6);
     const sc = scrollRef.current; if (!sc) return;
-    const target = FROZEN_W + (TODAY - DAYS[0]) * DAYW - (sc.clientWidth - FROZEN_W) / 2;
-    sc.scrollTo({ left: Math.max(0, target), behavior: "smooth" });
+    const june = GANTT[6];
+    // center of the today CELL, positioned mid of the VISIBLE axis area (the
+    // sticky ledger columns permanently cover the left FROZEN_W px of the view)
+    const lineX = (june.today - june.days[0]) * DAYW + DAYW / 2;
+    const target = lineX - (sc.clientWidth - FROZEN_W) / 2;
+    const reduce = window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+    sc.scrollTo({ left: Math.max(0, target), behavior: reduce ? "auto" : "smooth" });
   }, []);
   useEffect(() => { const t = setTimeout(scrollToday, 60); return () => clearTimeout(t); }, [scrollToday]);
   const tabs = [
@@ -484,6 +551,28 @@ function ScreenC() {
     { icon: "🗺", label: "รายงาน" },
   ];
   const [activeTab, setActiveTab] = useState(0);
+  const exportCsv = () => {
+    const rows = [["รายการงาน", "ช่วงงาน", "น้ำหนัก", "%จริง", "สถานะ"]];
+    cfg.tasks.forEach((tk) => {
+      rows.push([tk.name, tk.range.replace(/→/g, "->"), tk.w, "0.00", cfg.today !== null && tk.s < cfg.today ? "ล่าช้า" : "ตามแผน"]);
+    });
+    const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
+    // UTF-8 BOM so Excel opens Thai text correctly
+    const blob = new Blob([String.fromCharCode(0xfeff) + csv], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `tongjai-plan-2026-0${month}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    showToast("ดาวน์โหลดแผนงานเป็น CSV แล้ว 📥");
+  };
+  // planned share of each task that should be done by "today" (June window)
+  const planPct = (tk) => {
+    const june = GANTT[6];
+    const total = tk.e - tk.s + 1;
+    return Math.round(Math.min(Math.max(june.today - tk.s, 0), total) / total * 100);
+  };
 
   return (
     <section aria-label="แผนงาน Gantt">
@@ -512,7 +601,7 @@ function ScreenC() {
               <span aria-hidden="true">{t.icon}</span> {t.label}{activeTab === i && <span style={{ position: "absolute", left: 13, right: 13, bottom: 4, height: 2, background: "#1E5FCC", borderRadius: 2 }} />}
             </button>
           ))}
-          <button type="button" style={{ flex: "0 0 auto", marginLeft: "auto", height: 36, padding: "0 13px", border: "none", borderRadius: 10, background: "#E7F4EC", color: "#18753F", fontFamily: FONT, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
+          <button type="button" onClick={exportCsv} style={{ flex: "0 0 auto", marginLeft: "auto", height: 36, padding: "0 13px", border: "none", borderRadius: 10, background: "#E7F4EC", color: "#18753F", fontFamily: FONT, fontSize: 13, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, whiteSpace: "nowrap" }}>
             <FileSpreadsheet size={13} aria-hidden /> Excel
           </button>
         </div>
@@ -534,15 +623,16 @@ function ScreenC() {
           </KPICard>
         </div>
 
-        {/* Gantt */}
+        {/* Gantt view */}
+        {activeTab === 0 && (
         <div style={{ marginTop: 24 }}>
           <div style={{ background: "#fff", border: "1px solid #DBD9D1", borderRadius: 14, boxShadow: "0 1px 2px rgba(21,24,30,.04)", overflow: "hidden" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "14px 14px 10px" }}>
               <div style={{ fontSize: 16, fontWeight: 600, color: "#15181E", display: "flex", alignItems: "center", gap: 6 }}>📊 ตาราง Gantt แผนงาน</div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div role="group" aria-label="เลือกเดือน" style={{ display: "inline-flex", background: "#FBFAF7", borderRadius: 10, padding: 3, gap: 2 }}>
-                  {[{ m: "6/26", aria: "มิถุนายน 2026" }, { m: "7/26", aria: "กรกฎาคม 2026" }].map((mo, i) => (
-                    <button key={mo.m} type="button" aria-pressed={month === i} aria-label={mo.aria} onClick={() => setMonth(i)} style={{ border: "none", background: month === i ? "#15181E" : "transparent", color: month === i ? "#fff" : "#646B75", fontFamily: FONT_NUM, fontSize: 12, fontWeight: 600, padding: "4px 8px", borderRadius: 7, cursor: "pointer" }}>{mo.m}</button>
+                  {[{ key: 6, m: "6/26", aria: "มิถุนายน 2026" }, { key: 7, m: "7/26", aria: "กรกฎาคม 2026" }].map((mo) => (
+                    <button key={mo.key} type="button" aria-pressed={month === mo.key} aria-label={mo.aria} onClick={() => setMonth(mo.key)} style={{ border: "none", background: month === mo.key ? "#15181E" : "transparent", color: month === mo.key ? "#fff" : "#646B75", fontFamily: FONT_NUM, fontSize: 12, fontWeight: 600, padding: "4px 8px", borderRadius: 7, cursor: "pointer" }}>{mo.m}</button>
                   ))}
                 </div>
                 <button type="button" onClick={scrollToday} style={{ border: "none", background: "none", color: "#1E5FCC", fontFamily: FONT, fontSize: 12, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 3, padding: "5px 6px", borderRadius: 10 }}><span aria-hidden="true">📍</span> วันนี้</button>
@@ -550,7 +640,7 @@ function ScreenC() {
             </div>
 
             <div ref={scrollRef} style={{ overflowX: "auto", WebkitOverflowScrolling: "touch", position: "relative" }}>
-              <div style={{ display: "grid", minWidth: 560, position: "relative" }}>
+              <div style={{ display: "grid", minWidth: FROZEN_W + cfg.days.length * DAYW, position: "relative" }}>
                 <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(#DBD9D1 .8px,transparent .8px)", backgroundSize: "24px 24px", opacity: 0.45, pointerEvents: "none" }} />
                 {/* head */}
                 <div style={{ display: "grid", gridTemplateColumns: "130px 44px 44px 1fr", borderBottom: "1px solid #DBD9D1", background: "#fff", position: "relative", zIndex: 1 }}>
@@ -558,29 +648,78 @@ function ScreenC() {
                   <div style={{ position: "sticky", left: 130, background: "#fff", zIndex: 2, borderRight: "1px solid #EAE7DF", padding: 8, fontSize: 11, fontWeight: 600, color: "#646B75", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>น้ำหนัก</div>
                   <div style={{ position: "sticky", left: 174, background: "#fff", zIndex: 2, borderRight: "1px solid #DBD9D1", padding: 8, fontSize: 11, fontWeight: 600, color: "#646B75", display: "flex", alignItems: "center", justifyContent: "flex-end" }}>%จริง</div>
                   <div style={{ display: "flex" }}>
-                    {DAYS.map((d) => (
-                      <span key={d} style={{ width: DAYW, flex: `0 0 ${DAYW}px`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: d === TODAY ? 800 : 600, color: d === TODAY ? "#C8322B" : "#646B75", ...num, borderLeft: "1px dotted #EAE7DF", opacity: d < TODAY ? 0.5 : 1 }}>{d}</span>
+                    {cfg.days.map((d) => (
+                      <span key={d} style={{ width: DAYW, flex: `0 0 ${DAYW}px`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: cfg.today !== null && d === cfg.today ? 800 : 600, color: cfg.today !== null && d === cfg.today ? "#C8322B" : "#646B75", ...num, borderLeft: "1px dotted #EAE7DF", opacity: cfg.today !== null && d < cfg.today ? 0.5 : 1 }}>{d}</span>
                     ))}
                   </div>
                 </div>
-                {TASKS.map((tk, i) => <GanttRow key={i} tk={tk} />)}
+                {cfg.tasks.map((tk, i) => <GanttRow key={`${month}-${i}`} tk={tk} days={cfg.days} today={cfg.today} />)}
                 {/* today plumb line — aligned to the LEFT edge of the today cell (all blue planned
                     bars sit right of it, all hollow-red overdue bars left); zIndex 1 keeps it behind
-                    the frozen ledger columns; single .today-line class owns the breathe animation */}
-                <div className="today-line" style={{ position: "absolute", top: 0, bottom: 0, left: FROZEN_W + (TODAY - DAYS[0]) * DAYW, width: 0, borderLeft: "2px dashed #E23B33", zIndex: 1 }}>
-                  <span style={{ position: "absolute", top: -1, transform: "translateX(-50%)", background: "#E23B33", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: "0 0 6px 6px", whiteSpace: "nowrap" }}>วันนี้</span>
-                </div>
+                    the frozen ledger columns; single .today-line class owns the breathe animation.
+                    Rendered only for the month "today" actually falls in. */}
+                {cfg.today !== null && (
+                  <div className="today-line" style={{ position: "absolute", top: 0, bottom: 0, left: FROZEN_W + (cfg.today - cfg.days[0]) * DAYW, width: 0, borderLeft: "2px dashed #E23B33", zIndex: 1 }}>
+                    <span style={{ position: "absolute", top: -1, transform: "translateX(-50%)", background: "#E23B33", color: "#fff", fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: "0 0 6px 6px", whiteSpace: "nowrap" }}>วันนี้</span>
+                  </div>
+                )}
               </div>
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", padding: "10px 14px 14px", borderTop: "1px solid #EAE7DF" }}>
               <Leg><span style={{ width: 14, height: 10, borderRadius: 3, background: "#EAF1FC", border: "1px solid #2E7DD1" }} />วางแผน</Leg>
               <Leg><span style={{ width: 14, height: 10, borderRadius: 3, background: "transparent", border: "1.5px solid #E23B33" }} />ล่าช้า / ยังไม่ทำ</Leg>
-              <Leg><span style={{ width: 0, height: 14, borderLeft: "2px dashed #E23B33" }} />วันนี้ (17)</Leg>
+              {cfg.today !== null && <Leg><span style={{ width: 0, height: 14, borderLeft: "2px dashed #E23B33" }} />วันนี้ (17)</Leg>}
               <span style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 700, color: "#C8322B", ...num }}>จริง 0% · ล่าช้า</span>
             </div>
           </div>
         </div>
+        )}
+
+        {/* Progress view — planned share vs actual per task (June window) */}
+        {activeTab === 1 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ background: "#fff", border: "1px solid #DBD9D1", borderRadius: 14, boxShadow: "0 1px 2px rgba(21,24,30,.04)", overflow: "hidden" }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "#15181E", display: "flex", alignItems: "center", gap: 6, padding: "14px 14px 10px" }}>📈 ความก้าวหน้า (แผน vs จริง)</div>
+            {GANTT[6].tasks.map((tk, i) => {
+              const p = planPct(tk);
+              return (
+                <div key={i} style={{ padding: "12px 14px", borderTop: "1px solid #EAE7DF" }}>
+                  <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: "#15181E", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tk.name} <span style={{ fontSize: 11, fontWeight: 500, color: "#646B75", ...num }}>{tk.range}</span></span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#C8322B", whiteSpace: "nowrap", ...num }}>แผน {p}% · จริง 0%</span>
+                  </div>
+                  <div role="img" aria-label={`แผน ${p}% จริง 0%`} style={{ height: 6, borderRadius: 3, background: "#FBFAF7", border: "1px solid #EAE7DF", marginTop: 8, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${p}%`, background: "#1E5FCC", borderRadius: 3 }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        )}
+
+        {/* Report view — project summary */}
+        {activeTab === 2 && (
+        <div style={{ marginTop: 24 }}>
+          <div style={{ background: "#fff", border: "1px solid #DBD9D1", borderRadius: 14, boxShadow: "0 1px 2px rgba(21,24,30,.04)", overflow: "hidden" }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: "#15181E", display: "flex", alignItems: "center", gap: 6, padding: "14px 14px 10px" }}>🗺 รายงานสรุปโครงการ</div>
+            {[
+              ["โครงการ", "Scania HDY", false, true],
+              ["ช่วงดำเนินการ", "2026-06-01 → 2026-07-22", false, false],
+              ["งานทั้งโครงการ", "13 รายการ (45 วัน)", false, false],
+              ["งานในช่วงที่แสดง", `${GANTT[6].tasks.length} รายการ · น้ำหนักรวม ${GANTT[6].tasks.reduce((a, t) => a + parseFloat(t.w), 0).toFixed(2)}`, false, false],
+              ["แผนสะสม ณ วันนี้", "24.4%", false, false],
+              ["ผลงานจริงสะสม", "0% · ▼ ล่าช้า", true, false],
+            ].map(([k, v, late, thai]) => (
+              <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "11px 14px", borderTop: "1px solid #EAE7DF", fontSize: 13 }}>
+                <span style={{ fontWeight: 500, color: "#646B75" }}>{k}</span>
+                <span style={{ fontWeight: 700, color: late ? "#C8322B" : "#15181E", ...(thai ? {} : num) }}>{v}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        )}
       </div>
     </section>
   );
@@ -600,6 +739,15 @@ export default function App() {
   useEffect(() => { prevTab.current = tab; }, [tab]);
   const sendPrompt = (t) => { if (typeof window !== "undefined" && window.sendPrompt) window.sendPrompt(t); };
   const dark = tab === 1;
+  // toast snackbar (demo affordances: logout, attach, CSV download)
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef();
+  const showToast = (msg) => {
+    setToast(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), 2200);
+  };
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
   const TABS = ["การเงิน", "แชทบอท", "แผนงาน"];
   const tablistRef = useRef(null);
   const onTabKey = (e) => {
@@ -627,6 +775,8 @@ export default function App() {
         @keyframes tjrFadeL{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
         .tjr-screen{animation:tjrFade .18s cubic-bezier(.22,.61,.36,1)}
         .tjr-screen.l{animation:tjrFadeL .18s cubic-bezier(.22,.61,.36,1)}
+        .tjr-toast{opacity:0;transform:translateX(-50%) translateY(8px);transition:opacity .18s cubic-bezier(.22,.61,.36,1),transform .18s cubic-bezier(.22,.61,.36,1);pointer-events:none}
+        .tjr-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
         /* visible keyboard focus ring (WCAG 2.4.7) */
         button:focus-visible,[tabindex]:focus-visible{outline:2px solid #1E5FCC;outline-offset:2px;box-shadow:0 0 0 4px rgba(30,95,204,.30)}
         /* progressive header collapse so the right cluster never clips the rounded frame */
@@ -635,7 +785,9 @@ export default function App() {
         /* collapse ALL motion to opacity-only under reduced-motion */
         @media (prefers-reduced-motion:reduce){
           *,*::before,*::after{animation-duration:.12s!important;animation-iteration-count:1!important;transition-duration:.12s!important}
+          .tjr-screen{animation:none!important}
           .today-line{animation:none!important;opacity:.85}
+          .tjr-toast{transition:opacity .12s!important;transform:translateX(-50%)!important}
         }
       `}</style>
 
@@ -662,12 +814,12 @@ export default function App() {
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <button className="tjr-proj-chip" aria-label="สลับโครงการ" style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 30, padding: "0 11px", background: "#EAF1FC", color: "#1E5FCC", fontSize: 13, fontWeight: 600, borderRadius: 999, border: "none", cursor: "pointer", whiteSpace: "nowrap", fontFamily: FONT }}>โครงการ <ChevronDown size={12} aria-hidden /></button>
+              <button className="tjr-proj-chip" aria-label="สลับโครงการ" onClick={() => sendPrompt("สลับโครงการ")} style={{ display: "inline-flex", alignItems: "center", gap: 4, height: 30, padding: "0 11px", background: "#EAF1FC", color: "#1E5FCC", fontSize: 13, fontWeight: 600, borderRadius: 999, border: "none", cursor: "pointer", whiteSpace: "nowrap", fontFamily: FONT }}>โครงการ <ChevronDown size={12} aria-hidden /></button>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ width: 32, height: 32, borderRadius: "50%", background: "#F08A24", color: "#fff", fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", flex: "0 0 32px" }}>ผ</span>
                 <span className="tjr-admin-label" style={{ fontSize: 12, fontWeight: 500, color: "#646B75", whiteSpace: "nowrap" }}>ผู้ดูแลระบบ</span>
               </div>
-              <button style={{ height: 32, padding: "0 10px", background: "none", border: "1px solid #EAE7DF", borderRadius: 10, fontFamily: FONT, fontSize: 12, fontWeight: 600, color: "#646B75", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}><LogOut size={12} aria-hidden /> ออกจากระบบ</button>
+              <button onClick={() => { sendPrompt("ออกจากระบบ"); showToast("โหมดเดโม — ยังไม่ได้เชื่อมระบบล็อกอิน"); }} style={{ height: 32, padding: "0 10px", background: "none", border: "1px solid #EAE7DF", borderRadius: 10, fontFamily: FONT, fontSize: 12, fontWeight: 600, color: "#646B75", cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}><LogOut size={12} aria-hidden /> ออกจากระบบ</button>
             </div>
           </header>
 
@@ -676,7 +828,9 @@ export default function App() {
             <div ref={tablistRef} role="tablist" aria-label="หน้าจอ" onKeyDown={onTabKey} style={{ position: "relative", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", background: dark ? "#1A1F27" : "#FBFAF7", borderRadius: 10, height: 44, padding: 4 }}>
               <span style={{ position: "absolute", top: 4, left: 4, height: 36, width: "calc((100% - 8px)/3)", background: dark ? "#232A34" : "#fff", borderRadius: 7, boxShadow: dark ? "0 2px 8px rgba(0,0,0,.4)" : "0 2px 8px rgba(21,24,30,.06)", transition: "transform .22s cubic-bezier(.4,0,.2,1)", transform: `translateX(${tab * 100}%)`, zIndex: 1 }} />
               {TABS.map((t, i) => (
-                <button key={t} role="tab" id={`tjr-tab-${i}`} aria-controls={`tjr-panel-${i}`} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)}
+                // aria-controls only on the selected tab: the inactive panels are
+                // unmounted, and aria-controls must not point at a missing id
+                <button key={t} role="tab" id={`tjr-tab-${i}`} aria-controls={tab === i ? `tjr-panel-${i}` : undefined} aria-selected={tab === i} tabIndex={tab === i ? 0 : -1} onClick={() => setTab(i)}
                   style={{ position: "relative", zIndex: 2, background: "none", border: "none", cursor: "pointer", fontFamily: FONT, fontSize: 13, fontWeight: 600,
                     color: tab === i ? (dark ? "#ECEEF1" : "#1E5FCC") : (dark ? "#6B7480" : "#646B75"), display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {t}
@@ -689,9 +843,15 @@ export default function App() {
           <div className="tjr-scroll" style={{ flex: "1 1 auto", overflowY: "auto", overflowX: "hidden", position: "relative" }}>
             <div key={tab} id={`tjr-panel-${tab}`} role="tabpanel" aria-labelledby={`tjr-tab-${tab}`} tabIndex={0} className={`tjr-screen${dir ? " " + dir : ""}`}>
               {tab === 0 && <ScreenA sendPrompt={sendPrompt} />}
-              {tab === 1 && <ScreenB sendPrompt={sendPrompt} goBack={() => setTab(0)} />}
-              {tab === 2 && <ScreenC />}
+              {tab === 1 && <ScreenB sendPrompt={sendPrompt} goBack={() => setTab(0)} showToast={showToast} />}
+              {tab === 2 && <ScreenC showToast={showToast} />}
             </div>
+          </div>
+
+          {/* toast snackbar */}
+          <div role="status" aria-live="polite" className={`tjr-toast${toast ? " show" : ""}`}
+            style={{ position: "absolute", left: "50%", bottom: 28, background: "#15181E", color: "#fff", fontSize: 13, fontWeight: 600, padding: "10px 16px", borderRadius: 999, boxShadow: "0 12px 32px rgba(21,24,30,.14)", zIndex: 60, whiteSpace: "nowrap", maxWidth: "88%", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {toast}
           </div>
         </div>
       </div>
