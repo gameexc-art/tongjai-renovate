@@ -523,6 +523,51 @@ input.ci-field{outline:none}
 
 /* focus */
 button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 4px var(--accent-ring)}
+
+/* ============================================================
+   LIVE CHAT (Screen B over http/https) — additive styles only
+   ============================================================ */
+/* typing indicator (3 pulsing dots) */
+.typing-dots{display:inline-flex;align-items:center;gap:4px;padding:4px 2px}
+.typing-dots i{width:6px;height:6px;border-radius:50%;background:var(--chat-ink-3);animation:dotPulse 1.1s var(--ease-inout) infinite}
+.typing-dots i:nth-child(2){animation-delay:.18s}
+.typing-dots i:nth-child(3){animation-delay:.36s}
+@keyframes dotPulse{0%,100%{opacity:.35;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.typing-dots i{animation:none;opacity:.7;transform:none}}
+
+/* disabled chat action buttons */
+.cbtn.disabled,.cbtn[disabled]{opacity:.55;pointer-events:none}
+
+/* attached slip photo (user bubble) */
+.slip-photo{background:var(--user-bubble);border-radius:var(--r-bubble);border-bottom-right-radius:6px;padding:4px;overflow:hidden}
+.slip-photo img{display:block;width:180px;max-width:100%;height:auto;border-radius:14px}
+
+/* inline passcode gate (bot bubble form) */
+.gate-form{display:flex;flex-direction:column;gap:8px;margin-top:10px;min-width:190px}
+.gate-input{height:40px;width:100%;border-radius:var(--r-sm);background:var(--chat-surface-2);border:1px solid var(--chat-line);color:var(--chat-ink);font-family:var(--font);font-size:13px;padding:0 12px;outline:none}
+.gate-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-ring)}
+.gate-input::placeholder{color:var(--chat-ink-3)}
+.gate-input:disabled{opacity:.55}
+.gate-err{display:none;font-size:12px;font-weight:600;color:#F0938C}
+.gate-err.show{display:block}
+
+/* usage card (dark dashboard — mirrors the LINE Flex card) */
+.msg.usagew{width:100%;max-width:86%}
+.bubble.usagecard{padding:0;overflow:hidden;width:100%;background:#0F1419;border-color:#2A313A}
+.ucard{padding:14px;display:flex;flex-direction:column;gap:10px}
+.ucard-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.ucard-title{font-size:15px;font-weight:800;color:#E6EDF3}
+.ucard-badge{font-size:11px;font-weight:700;white-space:nowrap}
+.usec{background:#1A2027;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:7px}
+.usec-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.usec-name{font-size:13px;font-weight:700;color:#E6EDF3}
+.usec-pct{font-size:13px;font-weight:800;font-family:var(--font-num);white-space:nowrap}
+.ubar{height:12px;border-radius:6px;background:#2A313A;overflow:hidden}
+.ubar i{display:block;height:100%;border-radius:6px}
+.ukv{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:11.5px}
+.ukv .k{color:#8B949E;font-weight:500}
+.ukv .v{color:#E6EDF3;font-weight:600;font-family:var(--font-num)}
+.ufoot{font-size:10.5px;color:#8B949E;line-height:1.6}
 </style>
 </head>
 <body>
@@ -1114,7 +1159,7 @@ function chatSend(){
   f.value='';
   setTimeout(function(){
     // same reply the real LINE bot gives for a text message
-    chatAppend('left','ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸');
+    chatAppend('left','ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸 หรือพิมพ์ "usage" เพื่อเช็คการใช้งาน Claude Code');
   },600);
 }
 document.getElementById('chatField').addEventListener('keydown',function(e){
@@ -1312,6 +1357,555 @@ function exportPlanCsv(){
 
 buildGantt('6');
 buildPlanViews();
+</script>
+<script>
+/* ============================================================
+   LIVE CHAT (Screen B) — real NONEAICE bot over http/https.
+   file:// keeps the scripted demo above 100% intact: this block
+   only replaces window.chatSend / window.chatAttach when LIVE.
+   SECURITY: every server-provided string is rendered with
+   textContent — never innerHTML. Static icon SVG only.
+   ============================================================ */
+var LIVE = location.protocol === 'http:' || location.protocol === 'https:';
+if(LIVE)(function(){
+  var SS_KEY='tongjai.dashboard.token'; // SHARED with dashboard.html
+  var USAGE_WORDS=['usage','เช็ค','/status','status','ยอดใช้'];
+  var NUDGE='ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸 หรือพิมพ์ "usage" เพื่อเช็คการใช้งาน Claude Code';
+  var ALLOWED={'image/jpeg':1,'image/png':1,'image/webp':1,'image/gif':1};
+  var MAX_RAW=3*1024*1024;        // server hard limit
+  var PREP_LIMIT=2.5*1024*1024;   // client re-encode threshold
+
+  /* ---------- tiny DOM helpers ---------- */
+  function el(tag,cls,text){
+    var n=document.createElement(tag);
+    if(cls) n.className=cls;
+    if(text!=null) n.textContent=text; // never parsed as HTML
+    return n;
+  }
+  function chatBody(){ return document.querySelector('#screenB .chat-body'); }
+  function scrollBottom(){
+    // #bodyScroll is shared by all three screens — an async bot reply must not
+    // yank the finance/plan screens while the user is reading them.
+    if(typeof current!=='undefined'&&current!==1) return;
+    var sc=document.getElementById('bodyScroll');
+    sc.scrollTop=sc.scrollHeight;
+  }
+  function nowTime(){ return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}); }
+  function msgWrap(side,node,extraCls){
+    var wrap=el('div','msg '+side+(extraCls?' '+extraCls:''));
+    wrap.appendChild(node);
+    wrap.appendChild(el('span','msg-time',nowTime()));
+    chatBody().appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+  function botText(text){ return msgWrap('left',el('div','bubble',text)); }
+  function userText(text){ return msgWrap('right',el('div','bubble',text)); }
+  function botSuccess(text){
+    var s=el('div','success');
+    // static icon markup only — the message text goes in as a text node below
+    s.innerHTML='<svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="8" stroke="#1F6E42" stroke-width="1.4"/><path class="check-draw" d="M5.2 9.3l2.4 2.4L12.8 6.2" stroke="#7FE3AA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    s.appendChild(document.createTextNode(text));
+    return msgWrap('left',s);
+  }
+  function showTyping(){
+    var dots=el('span','typing-dots');
+    dots.setAttribute('role','status');
+    dots.setAttribute('aria-label','กำลังพิมพ์…');
+    for(var k=0;k<3;k++) dots.appendChild(el('i'));
+    var b=el('div','bubble');
+    b.appendChild(dots);
+    var wrap=el('div','msg left');
+    wrap.appendChild(b);
+    chatBody().appendChild(wrap);
+    scrollBottom();
+    return wrap;
+  }
+  function removeTyping(t){ if(t&&t.parentNode) t.parentNode.removeChild(t); }
+  function disableActions(box){
+    var btns=box.querySelectorAll('.cbtn');
+    for(var i=0;i<btns.length;i++){ btns[i].classList.add('disabled'); btns[i].disabled=true; }
+  }
+  function enableActions(box){
+    var btns=box.querySelectorAll('.cbtn');
+    for(var i=0;i<btns.length;i++){ btns[i].classList.remove('disabled'); btns[i].disabled=false; }
+  }
+
+  /* ---------- timeout-bounded fetch ---------- */
+  function apiFetch(url,opts,timeoutMs){
+    opts=opts||{};
+    var timer=null;
+    if(typeof AbortController!=='undefined'){
+      var ctl=new AbortController();
+      opts.signal=ctl.signal;
+      timer=setTimeout(function(){ ctl.abort(); },timeoutMs||15000);
+    }
+    return fetch(url,opts).then(function(res){
+      if(timer) clearTimeout(timer);
+      return res;
+    },function(err){
+      if(timer) clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  /* ---------- token store (shared with dashboard.html) ---------- */
+  function getToken(){ try{ return sessionStorage.getItem(SS_KEY)||''; }catch(e){ return ''; } }
+  function setToken(t){ try{ sessionStorage.setItem(SS_KEY,t); }catch(e){} }
+  function clearToken(){ try{ sessionStorage.removeItem(SS_KEY); }catch(e){} }
+
+  /* ---------- passcode gate (inline bot bubble) ---------- */
+  // gateQueue holds EVERY action waiting on the unlock (not just the last one):
+  // two gated actions racing a token rotation must both resume, or a pending
+  // 401-retry gets silently dropped with its buttons left disabled.
+  var gateOpen=false, gateQueue=[], gateInputEl=null;
+  function ensureToken(next){
+    if(getToken()){ next(); return; }
+    gateQueue.push(next);
+    if(gateOpen){
+      if(gateInputEl){ try{ gateInputEl.focus(); }catch(e){} }
+      return;
+    }
+    gateOpen=true;
+    var b=el('div','bubble');
+    b.appendChild(el('div','prompt-bubble','ใส่รหัสผ่านเพื่อเชื่อมต่อระบบก่อนนะครับ 🔐'));
+    var form=el('form','gate-form');
+    var inp=el('input','gate-input');
+    inp.type='password';
+    inp.placeholder='รหัสผ่าน (DASHBOARD_TOKEN)';
+    inp.setAttribute('autocomplete','current-password');
+    var btn=el('button','cbtn','ปลดล็อก');
+    btn.type='submit';
+    var err=el('div','gate-err');
+    form.appendChild(inp); form.appendChild(btn); form.appendChild(err);
+    b.appendChild(form);
+    msgWrap('left',b);
+    gateInputEl=inp;
+    setTimeout(function(){ try{ inp.focus(); }catch(e){} },60);
+    function fail(text){
+      err.textContent=text; err.classList.add('show');
+      btn.classList.remove('disabled'); btn.disabled=false; inp.disabled=false;
+      try{ inp.focus(); inp.select(); }catch(e){}
+      scrollBottom();
+    }
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      var candidate=(inp.value||'').trim();
+      if(!candidate){ fail('กรุณาใส่รหัสผ่านก่อนนะครับ'); return; }
+      // Thai keyboard layout left on can never be the passcode, and fetch()
+      // would throw on the header value — reject with an accurate message.
+      if(/[^\x20-\x7E]/.test(candidate)){
+        fail('รหัสผ่านเป็นตัวอักษรอังกฤษ/ตัวเลข (เช็คภาษาแป้นพิมพ์)');
+        return;
+      }
+      err.classList.remove('show');
+      btn.classList.add('disabled'); btn.disabled=true; inp.disabled=true;
+      // validate against /api/transactions (read-only, no side effects)
+      apiFetch('/api/transactions',{
+        method:'GET',
+        headers:{'Authorization':'Bearer '+candidate},
+        cache:'no-store',
+        credentials:'same-origin'
+      },10000).then(function(res){
+        // 502 = the ledger BACKEND is down, but auth already passed (the token
+        // check runs before the storage read) — the passcode is correct, so
+        // accept it instead of blaming the connection during an outage.
+        if(res.status===200||res.status===502){
+          setToken(candidate);
+          b.textContent='ปลดล็อกแล้ว ✅';
+          gateOpen=false; gateInputEl=null;
+          var q=gateQueue; gateQueue=[];
+          for(var i=0;i<q.length;i++){ try{ q[i](); }catch(e){} }
+        }
+        else if(res.status===401){ fail('รหัสไม่ถูกต้อง ลองใหม่อีกครั้งนะครับ'); }
+        else if(res.status===503){ fail('ยังไม่ได้ตั้งค่า DASHBOARD_TOKEN ใน Vercel ครับ'); }
+        else { fail('เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งนะครับ'); }
+      },function(){
+        fail('เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งนะครับ');
+      });
+    });
+  }
+  // any later 401 → clear token, re-gate, then retry the action once
+  function regate(retry){
+    clearToken();
+    ensureToken(retry);
+  }
+
+  /* ---------- attach flow (+ button) ---------- */
+  var fileInput=null;
+  function openPicker(){
+    if(!fileInput){
+      fileInput=document.createElement('input');
+      fileInput.type='file';
+      fileInput.accept='image/*';
+      fileInput.style.display='none';
+      fileInput.addEventListener('change',function(){
+        var f=fileInput.files&&fileInput.files[0];
+        fileInput.value='';
+        if(f) handleSlipFile(f);
+      });
+      document.body.appendChild(fileInput);
+    }
+    fileInput.click();
+  }
+  // After an async unlock the browser's transient user activation has expired,
+  // so fileInput.click() would be silently blocked — offer an explicit tap
+  // instead (a fresh gesture) rather than a picker that never opens.
+  function offerPicker(){
+    var b=el('div','bubble');
+    b.appendChild(el('div','prompt-bubble','พร้อมแล้วครับ แตะปุ่มด้านล่างเพื่อเลือกรูปสลิป'));
+    var actions=el('div','chat-actions');
+    var btn=el('button','cbtn','📎 เลือกรูปสลิป'); btn.type='button';
+    btn.addEventListener('click',function(){ disableActions(actions); openPicker(); });
+    actions.appendChild(btn);
+    b.appendChild(actions);
+    msgWrap('left',b);
+  }
+  function liveAttach(){
+    sendPrompt&&sendPrompt('แนบสลิป');
+    if(getToken()){ openPicker(); return; } // direct tap → activation intact
+    ensureToken(offerPicker);
+  }
+
+  function showSlipPreview(file){
+    var url=URL.createObjectURL(file);
+    var box=el('div','slip-photo');
+    var img=document.createElement('img');
+    img.alt='สลิปที่แนบ';
+    img.onload=function(){ URL.revokeObjectURL(url); scrollBottom(); };
+    img.onerror=function(){ URL.revokeObjectURL(url); };
+    img.src=url;
+    box.appendChild(img);
+    msgWrap('right',box);
+  }
+
+  /** Client-side prep: pass through small allowed types; otherwise re-encode
+   *  via canvas to JPEG (max dim 1600px, q .85). cb(blobOrNull, contentType). */
+  function prepareImage(file,cb){
+    var needs=!ALLOWED[file.type]||file.size>PREP_LIMIT;
+    if(!needs){ cb(file,file.type); return; }
+    function fallback(){
+      if(ALLOWED[file.type]&&file.size<=MAX_RAW) cb(file,file.type);
+      else cb(null,'');
+    }
+    var url=URL.createObjectURL(file);
+    var img=new Image();
+    img.onload=function(){
+      URL.revokeObjectURL(url);
+      try{
+        var w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+        if(!w||!h){ fallback(); return; }
+        var scale=Math.min(1,1600/Math.max(w,h));
+        var cv=document.createElement('canvas');
+        cv.width=Math.max(1,Math.round(w*scale));
+        cv.height=Math.max(1,Math.round(h*scale));
+        var ctx=cv.getContext('2d');
+        if(!ctx||!cv.toBlob){ fallback(); return; }
+        ctx.drawImage(img,0,0,cv.width,cv.height);
+        cv.toBlob(function(blob){
+          if(blob) cb(blob,'image/jpeg'); else fallback();
+        },'image/jpeg',0.85);
+      }catch(e){ fallback(); }
+    };
+    img.onerror=function(){ URL.revokeObjectURL(url); fallback(); };
+    img.src=url;
+  }
+
+  function handleSlipFile(file){
+    showSlipPreview(file);
+    prepareImage(file,function(blob,ctype){
+      if(!blob){ botText('อ่านไฟล์รูปไม่ได้ ลองรูป JPG/PNG นะครับ 🙏'); return; }
+      postSlip(blob,ctype,false);
+    });
+  }
+
+  function postSlip(blob,ctype,isRetry){
+    var typing=showTyping();
+    apiFetch('/api/parse-slip',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+getToken(),'content-type':ctype},
+      body:blob
+    },60000).then(function(res){
+      if(res.status===200){
+        return res.json().then(function(data){
+          removeTyping(typing);
+          if(data&&data.ok&&data.data) renderReceipt(data);
+          else botText('อ่านสลิปไม่สำเร็จ ลองส่งรูปที่ชัดขึ้นอีกครั้งนะครับ 🙏');
+        },function(){
+          removeTyping(typing);
+          botText('อ่านสลิปไม่สำเร็จ ลองส่งรูปที่ชัดขึ้นอีกครั้งนะครับ 🙏');
+        });
+      }
+      removeTyping(typing);
+      if(res.status===401){
+        if(isRetry){ botText('รหัสไม่ถูกต้อง ลองใหม่อีกครั้งนะครับ'); return; }
+        regate(function(){ postSlip(blob,ctype,true); });
+      }
+      else if(res.status===422) botText('อ่านสลิปไม่สำเร็จ ลองส่งรูปที่ชัดขึ้นอีกครั้งนะครับ 🙏');
+      else if(res.status===413) botText('รูปใหญ่เกินไป (เกิน 3 MB) ลองรูปเล็กลงนะครับ');
+      else if(res.status===415||res.status===400) botText('อ่านไฟล์รูปไม่ได้ ลองรูป JPG/PNG นะครับ 🙏');
+      else if(res.status===503){
+        // two distinct causes share 503 — name the right missing config
+        res.json().then(function(data){
+          botText((data&&data.error)==='ocr not configured'
+            ? 'ระบบยังไม่ได้ตั้งค่า GROQ_API_KEY (OCR) ใน Vercel ครับ'
+            : 'ระบบยังไม่ได้ตั้งค่า DASHBOARD_TOKEN ครับ');
+        },function(){ botText('ระบบยังไม่ได้ตั้งค่า DASHBOARD_TOKEN ครับ'); });
+      }
+      else botText('เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งนะครับ 🙏');
+    },function(){
+      removeTyping(typing);
+      botText('เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งนะครับ 🙏');
+    });
+  }
+
+  /* ---------- receipt card + two-step record flow ---------- */
+  function fmtAmt(n){
+    var v=Number(n)||0;
+    return v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function rLine(icon,text,extra){
+    var n=el('div','r-line'+(extra?' '+extra:''));
+    n.appendChild(document.createTextNode(icon));
+    n.appendChild(document.createTextNode(text)); // server data → text node only
+    return n;
+  }
+  function renderReceipt(resp){
+    var d=resp.data||{};
+    // flow state carried through both steps
+    var st={
+      slipId:String(resp.slipId||''),
+      amount:Number(d.amount)||0,
+      date:d.date?String(d.date):'',
+      ref:d.ref?String(d.ref):'',
+      merchant:d.merchant?String(d.merchant):'',
+      entity:'', category:''
+    };
+    var b=el('div','bubble receipt');
+    var head=el('div','receipt-head');
+    head.appendChild(el('span','receipt-dot'));
+    head.appendChild(document.createTextNode('ใบเสร็จ '));
+    head.appendChild(el('span','ok-tick','✓'));
+    b.appendChild(head);
+    var amt=el('div','r-line amt');
+    amt.appendChild(document.createTextNode('💰 '));
+    var v=el('span');
+    v.appendChild(el('span','r-baht','฿'));
+    v.appendChild(document.createTextNode(fmtAmt(st.amount)));
+    amt.appendChild(v);
+    b.appendChild(amt);
+    b.appendChild(rLine('🏢 ',st.merchant||'-'));
+    b.appendChild(rLine('📅 ',st.date||'-','tnum'));
+    b.appendChild(rLine('🔖 ',st.ref||'-','tnum'));
+    var actions=el('div','chat-actions');
+    var b1=el('button','cbtn','👤 บุคคล'); b1.type='button';
+    var b2=el('button','cbtn','🏢 บริษัท'); b2.type='button';
+    actions.appendChild(b1); actions.appendChild(b2);
+    b.appendChild(actions);
+    b1.addEventListener('click',function(){ pickEntity(st,'person','บุคคล',actions); });
+    b2.addEventListener('click',function(){ pickEntity(st,'company','บริษัท',actions); });
+    msgWrap('left',b);
+  }
+  function pickEntity(st,entity,label,actions){
+    disableActions(actions);
+    st.entity=entity;
+    sendPrompt&&sendPrompt(label);
+    userText(label);
+    var b=el('div','bubble');
+    b.appendChild(el('div','prompt-bubble','เลือกประเภทค่าจ่าย:'));
+    var stack=el('div','chat-actions stack');
+    var c1=el('button','cbtn'); c1.type='button';
+    c1.appendChild(document.createTextNode('📦 ค่าของ'));
+    c1.appendChild(el('span','dim','(บันทึกเป็นรายจ่าย)'));
+    var c2=el('button','cbtn'); c2.type='button';
+    c2.appendChild(document.createTextNode('💼 ค่าแรง'));
+    c2.appendChild(el('span','dim','(หัก ณ ที่จ่าย)'));
+    stack.appendChild(c1); stack.appendChild(c2);
+    b.appendChild(stack);
+    c1.addEventListener('click',function(){ pickCategory(st,'expense','ค่าของ',stack); });
+    c2.addEventListener('click',function(){ pickCategory(st,'withholding','ค่าแรง',stack); });
+    msgWrap('left',b);
+  }
+  function pickCategory(st,category,label,stack){
+    disableActions(stack);
+    st.category=category;
+    sendPrompt&&sendPrompt(label);
+    userText(label);
+    postRecord(st,stack,false);
+  }
+  function postRecord(st,stack,isRetry){
+    var typing=showTyping();
+    var payload={amount:st.amount,entity:st.entity,category:st.category};
+    if(st.date) payload.date=st.date;
+    if(st.ref) payload.ref=st.ref;
+    if(st.merchant) payload.merchant=st.merchant;
+    if(st.slipId) payload.slipId=st.slipId;
+    apiFetch('/api/record',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+getToken(),'content-type':'application/json'},
+      body:JSON.stringify(payload)
+    },15000).then(function(res){
+      if(res.status===200){
+        return res.json().then(function(data){
+          removeTyping(typing);
+          if(data&&data.duplicate) botSuccess('รายการนี้ถูกบันทึกไว้แล้วครับ ✅');
+          else botSuccess('✅ บันทึกเป็นใบรับรองแทนแล้วครับ');
+        },function(){
+          removeTyping(typing);
+          botSuccess('✅ บันทึกเป็นใบรับรองแทนแล้วครับ');
+        });
+      }
+      removeTyping(typing);
+      if(res.status===401){
+        if(isRetry){ botText('รหัสไม่ถูกต้อง ลองใหม่อีกครั้งนะครับ'); enableActions(stack); return; }
+        regate(function(){ postRecord(st,stack,true); });
+      }
+      else if(res.status===503){
+        // storage-missing vs token-missing share 503 — name the right one, and
+        // re-enable the buttons so a retry is possible once it's configured.
+        res.json().then(function(data){
+          botText((data&&data.error)==='storage not configured'
+            ? 'ยังไม่ได้ตั้งค่าที่เก็บข้อมูล (Blob/KV) ใน Vercel ครับ'
+            : 'ระบบยังไม่ได้ตั้งค่า DASHBOARD_TOKEN ครับ');
+        },function(){ botText('ยังไม่ได้ตั้งค่าที่เก็บข้อมูล (Blob/KV) ใน Vercel ครับ'); });
+        enableActions(stack);
+      }
+      else { botText('บันทึกไม่สำเร็จ ลองกดยืนยันอีกครั้งนะครับ 🙏'); enableActions(stack); }
+    },function(){
+      removeTyping(typing);
+      botText('เชื่อมต่อไม่ได้ ลองใหม่อีกครั้งนะครับ 🙏');
+      enableActions(stack);
+    });
+  }
+
+  /* ---------- usage card (mirrors api/_lib/usage.js Flex card) ---------- */
+  function barColorPct(p){
+    if(p>=95) return '#EF4444';
+    if(p>=80) return '#F59E0B';
+    return '#3B82F6';
+  }
+  function humanize(sec){
+    if(sec==null) return '—';
+    if(sec<=0) return 'now';
+    var h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60);
+    if(h>=24){ var d=Math.floor(h/24); return d+'d '+(h%24)+'h'; }
+    if(h>=1) return h+'h '+m+'m';
+    return m+'m';
+  }
+  // recompute the countdown fresh from resets_at so the card isn't stale
+  function resetsIn(w){
+    if(w&&w.resets_at){
+      var ms=new Date(w.resets_at).getTime()-Date.now();
+      if(isFinite(ms)) return Math.max(0,Math.round(ms/1000));
+    }
+    return (w&&w.resets_in_seconds!=null)?w.resets_in_seconds:null;
+  }
+  function ukv(k,v){
+    var row=el('div','ukv');
+    row.appendChild(el('span','k',k));
+    row.appendChild(el('span','v',v));
+    return row;
+  }
+  function usageSection(title,w,exact){
+    w=w||{};
+    var pct=Number(w.pct)||0;
+    var sec=el('div','usec');
+    var top=el('div','usec-top');
+    top.appendChild(el('span','usec-name',title));
+    var pctEl=el('span','usec-pct',Math.min(pct,100).toFixed(0)+'% used');
+    pctEl.style.color=barColorPct(pct);
+    top.appendChild(pctEl);
+    sec.appendChild(top);
+    var bar=el('div','ubar');
+    var fill=el('i');
+    fill.style.width=Math.max(0,Math.min(pct,100))+'%';
+    fill.style.background=barColorPct(pct);
+    bar.appendChild(fill);
+    sec.appendChild(bar);
+    sec.appendChild(ukv(exact?'Resets':'Resets ~',humanize(resetsIn(w))));
+    if(w.burn_pct_per_hour!=null) sec.appendChild(ukv('Burn rate',(Number(w.burn_pct_per_hour)||0).toFixed(1)+'%/hr'));
+    if(w.eta_seconds!=null) sec.appendChild(ukv('ETA to limit',humanize(w.eta_seconds)));
+    return sec;
+  }
+  function renderUsageCard(u){
+    var estimated=u.estimated!==false, exact=!estimated;
+    var card=el('div','ucard');
+    var head=el('div','ucard-head');
+    head.appendChild(el('span','ucard-title','Claude Code Usage'));
+    var badge=el('span','ucard-badge',exact?'● live':'● estimate');
+    badge.style.color=exact?'#3B82F6':'#8B949E';
+    head.appendChild(badge);
+    card.appendChild(head);
+    card.appendChild(usageSection('Current session (5h)',u.session,exact));
+    card.appendChild(usageSection('Weekly (All models)',u.weekly,exact));
+    card.appendChild(usageSection('Weekly (Sonnet only)',u.weekly_sonnet,exact));
+    var foot=el('div','ufoot');
+    var syncedAt=u.synced_at||u.updated_at||'';
+    var stamp='';
+    if(syncedAt){
+      try{ stamp=new Date(syncedAt).toISOString().replace('T',' ').slice(0,19); }catch(e){ stamp=''; }
+    }
+    foot.appendChild(el('div',null,'Synced '+stamp));
+    foot.appendChild(el('div',null,String(u.note||(estimated?'estimated from local logs':'live · Claude usage API'))));
+    card.appendChild(foot);
+    var b=el('div','bubble usagecard');
+    b.appendChild(card);
+    msgWrap('left',b,'usagew');
+  }
+  function fetchUsage(){
+    var typing=showTyping();
+    // public endpoint — no auth needed
+    apiFetch('/api/usage',{method:'GET',cache:'no-store'},10000).then(function(res){
+      if(res.status===200){
+        return res.json().then(function(data){
+          removeTyping(typing);
+          if(data&&data.ok&&data.usage) renderUsageCard(data.usage);
+          else botText('ดึงข้อมูล usage ไม่สำเร็จ ลองใหม่อีกครั้งนะครับ 🙏');
+        },function(){
+          removeTyping(typing);
+          botText('ดึงข้อมูล usage ไม่สำเร็จ ลองใหม่อีกครั้งนะครับ 🙏');
+        });
+      }
+      removeTyping(typing);
+      if(res.status===503) botText('ยังไม่ได้เชื่อมข้อมูล Claude usage ครับ (ตั้งค่า USAGE_SNAPSHOT_URL ใน Vercel ก่อน)');
+      else botText('ดึงข้อมูล usage ไม่สำเร็จ ลองใหม่อีกครั้งนะครับ 🙏');
+    },function(){
+      removeTyping(typing);
+      botText('ดึงข้อมูล usage ไม่สำเร็จ ลองใหม่อีกครั้งนะครับ 🙏');
+    });
+  }
+
+  /* ---------- text send ---------- */
+  function liveSend(){
+    var f=document.getElementById('chatField');
+    var text=(f.value||'').trim();
+    if(!text){ f.focus(); return; }
+    sendPrompt&&sendPrompt(text);
+    userText(text);
+    f.value='';
+    if(USAGE_WORDS.indexOf(text.toLowerCase())>=0){ fetchUsage(); return; }
+    setTimeout(function(){ botText(NUDGE); },600); // same reply the LINE bot gives
+  }
+
+  /* ---------- boot: swap the demo transcript for the live welcome ---------- */
+  (function(){
+    var body=chatBody();
+    var msgs=body.querySelectorAll('.msg'); // day-divider stays
+    for(var i=0;i<msgs.length;i++) body.removeChild(msgs[i]);
+    botText('สวัสดีครับ ผม NONEAICE บอทบันทึกใบเสร็จ 🤖 แนบรูปสลิปด้วยปุ่ม + เพื่อบันทึกรายจ่าย หรือพิมพ์ "usage" เพื่อเช็คการใช้งาน Claude Code ครับ');
+  })();
+
+  // take over the chat controls (inline onclick + Enter key resolve globals)
+  window.chatSend=liveSend;
+  window.chatAttach=liveAttach;
+  // live logout must really clear the cached passcode — the demo toast
+  // ("ยังไม่ได้เชื่อมระบบล็อกอิน") would be false on the live site.
+  window.demoLogout=function(){
+    sendPrompt&&sendPrompt('ออกจากระบบ');
+    clearToken();
+    toast('ออกจากระบบแล้ว — ล้างรหัสผ่านที่จำไว้แล้วครับ ✅');
+  };
+})();
 </script>
 </body>
 </html>

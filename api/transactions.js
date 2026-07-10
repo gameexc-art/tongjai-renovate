@@ -18,43 +18,8 @@
 // defaulting to same-origin only (no `*`), so a browser on an attacker page
 // cannot read the response even if it somehow had the token.
 
-import crypto from "node:crypto";
 import { listRecords } from "./_lib/store.js";
-
-function corsHeaders(env) {
-  const origin = env.DASHBOARD_ORIGIN;
-  const headers = {
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type, x-dashboard-token",
-    Vary: "Origin",
-  };
-  // Only echo an explicit, configured origin — never "*". With no
-  // DASHBOARD_ORIGIN set, omit the header entirely (same-origin only).
-  if (origin) headers["Access-Control-Allow-Origin"] = origin;
-  return headers;
-}
-
-/** Constant-time string compare that never throws on length mismatch. */
-function safeEqual(a, b) {
-  if (typeof a !== "string" || typeof b !== "string") return false;
-  const ab = Buffer.from(a);
-  const bb = Buffer.from(b);
-  if (ab.length !== bb.length) return false;
-  try {
-    return crypto.timingSafeEqual(ab, bb);
-  } catch {
-    return false;
-  }
-}
-
-/** Pull the presented dashboard token from Authorization: Bearer or header. */
-function presentedToken(request) {
-  const auth = request.headers.get("authorization") || "";
-  const m = auth.match(/^Bearer\s+(.+)$/i);
-  if (m) return m[1].trim();
-  const x = request.headers.get("x-dashboard-token");
-  return x ? x.trim() : "";
-}
+import { corsHeaders, requireDashboardToken } from "./_lib/auth.js";
 
 /** Strip PII (lineUserId) and internal fields before sending to the dashboard. */
 function sanitize(record) {
@@ -71,25 +36,9 @@ export async function OPTIONS() {
 export async function GET(request) {
   const env = process.env;
   const cors = corsHeaders(env);
-  const expected = env.DASHBOARD_TOKEN;
 
-  // Fail closed: if no token is configured, the endpoint is disabled, not open.
-  if (!expected) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "dashboard endpoint not configured" }),
-      {
-        status: 503,
-        headers: { ...cors, "content-type": "application/json; charset=utf-8" },
-      }
-    );
-  }
-
-  if (!safeEqual(presentedToken(request), expected)) {
-    return new Response(JSON.stringify({ ok: false, error: "unauthorized" }), {
-      status: 401,
-      headers: { ...cors, "content-type": "application/json; charset=utf-8" },
-    });
-  }
+  const denied = requireDashboardToken(request, env, cors);
+  if (denied) return denied;
 
   let transactions = [];
   try {

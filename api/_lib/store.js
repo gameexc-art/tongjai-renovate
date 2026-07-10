@@ -61,11 +61,17 @@ export function storageEnabled(env) {
  * Content-derived dedupe identity for a record. Prefers slipId (stable across
  * redeliveries AND re-taps of the same slip), then webhookEventId (stable
  * across redeliveries only), then a hash of the load-bearing fields.
+ *
+ * The slip basis deliberately EXCLUDES lineUserId: slipId is a hash of the
+ * slip image bytes on every channel (LINE bot and web chat), so the same
+ * physical slip recorded twice — by two people, from two devices, or once via
+ * LINE and once via the web — converges on one ledger row instead of
+ * double-counting the payment.
  */
 export function dedupeKeyFor(record) {
   const r = record || {};
   const basis = r.slipId
-    ? ["slip", r.lineUserId, r.amount, r.date, r.ref, r.entity, r.category, r.slipId]
+    ? ["slip", r.amount, r.date, r.ref, r.entity, r.category, r.slipId]
     : r.webhookEventId
       ? ["evt", r.webhookEventId]
       : ["raw", r.lineUserId, r.amount, r.date, r.ref, r.entity, r.category];

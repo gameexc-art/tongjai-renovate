@@ -9,6 +9,8 @@
 //   postback s=1   → step-2 buttons (📦 ค่าของ / 💼 ค่าแรง)
 //   postback s=2   → persist ledger (KV or Blob if set) → "✅ บันทึกเป็นใบรับรองแทนแล้วครับ"
 //   follow         → friendly Thai greeting
+//   text "usage"/"เช็ค"/"status" → Claude Code usage Flex card (see _lib/usage.js —
+//                    snapshot relayed from the apartment-dashboard deployment)
 //   text / other   → short usage hint
 //
 // Security & correctness:
@@ -41,6 +43,11 @@ import {
   textMessage,
   decodeState,
 } from "./_lib/flex.js";
+import {
+  isUsageTriggerText,
+  isUsageTriggerPostback,
+  buildUsageMessage,
+} from "./_lib/usage.js";
 
 // Hobby max is 300s; a synchronous Groq vision call fits comfortably.
 export const config = { maxDuration: 60 };
@@ -164,13 +171,24 @@ async function handleMessage(event, env) {
   }
 
   if (msg.type === "text") {
+    // "usage" / "เช็ค" / "status" → the Claude Code usage dashboard card
+    // (relayed from the apartment-dashboard snapshot; graceful text otherwise).
+    if (isUsageTriggerText(msg.text, env)) {
+      return replyOrPush({
+        replyToken,
+        userId,
+        token,
+        messages: [await buildUsageMessage(env)],
+      });
+    }
     return replyOrPush({
       replyToken,
       userId,
       token,
       messages: [
         textMessage(
-          "ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸"
+          "ส่งรูปสลิป/ใบเสร็จมาได้เลยครับ แล้วผมจะอ่านยอด ผู้รับ วันที่ และเลขอ้างอิงให้อัตโนมัติ 📸\n" +
+            'หรือพิมพ์ "usage" เพื่อเช็คการใช้งาน Claude Code'
         ),
       ],
     });
@@ -203,13 +221,15 @@ async function handleImage(messageId, replyToken, userId, env, token) {
     }
 
     // Reply with the polished "ใบเสร็จ" Flex card + step-1 buttons. The slipId
-    // (short hash of the image messageId) rides along in the postback state so
-    // the final save can dedupe confirm re-taps of this same slip.
+    // (short hash of the image BYTES) rides along in the postback state so
+    // the final save can dedupe confirm re-taps of this same slip — and, since
+    // /api/parse-slip hashes the same way, a slip recorded via LINE and via the
+    // web chat converges on the same ledger row.
     return replyOrPush({
       replyToken,
       userId,
       token,
-      messages: [receiptFlex(result.data, slipIdFor(messageId))],
+      messages: [receiptFlex(result.data, slipIdFor(buffer))],
     });
   } catch (err) {
     // LINE 202 / non-image body = the (often large) image is still processing.
@@ -244,7 +264,21 @@ async function handlePostback(event, env) {
   const userId = pushTarget(event.source);
   const recordUserId = event.source && event.source.userId;
   const replyToken = event.replyToken;
-  const st = decodeState((event.postback && event.postback.data) || "");
+  const data = (event.postback && event.postback.data) || "";
+
+  // Usage request from a rich-menu / quick-reply postback ("usage" or
+  // "action=usage") — handled before the receipt-state codec, which would
+  // otherwise read it as an unknown/stale postback and drop it.
+  if (isUsageTriggerPostback(data, env)) {
+    return replyOrPush({
+      replyToken,
+      userId,
+      token,
+      messages: [await buildUsageMessage(env)],
+    });
+  }
+
+  const st = decodeState(data);
 
   // Step 1 done (entity chosen) → ask for category (step 2 buttons).
   if (st.s === "1") {
@@ -300,7 +334,7 @@ async function handleFollow(event, env) {
     token,
     messages: [
       textMessage(
-        "สวัสดีครับ ผม NONEAICE บอทบันทึกใบเสร็จ 🤖\n\nส่งรูปสลิป/ใบเสร็จมาได้เลย ผมจะอ่านยอดเงิน ผู้รับ วันที่ และเลขอ้างอิงให้ แล้วช่วยบันทึกเป็นรายจ่าย/หัก ณ ที่จ่ายให้อัตโนมัติครับ ✅"
+        "สวัสดีครับ ผม NONEAICE บอทบันทึกใบเสร็จ 🤖\n\nส่งรูปสลิป/ใบเสร็จมาได้เลย ผมจะอ่านยอดเงิน ผู้รับ วันที่ และเลขอ้างอิงให้ แล้วช่วยบันทึกเป็นรายจ่าย/หัก ณ ที่จ่ายให้อัตโนมัติครับ ✅\n\nพิมพ์ \"usage\" เพื่อเช็คการใช้งาน Claude Code ได้ด้วยนะครับ 📊"
       ),
     ],
   });
@@ -339,11 +373,15 @@ function buildRecord(st, userId, webhookEventId) {
   };
 }
 
-/** Short, stable dedupe identity for one slip image (safe for postback data). */
-function slipIdFor(messageId) {
+/**
+ * Short, stable dedupe identity for one slip image (safe for postback data).
+ * Hashes the image BYTES — the same identity /api/parse-slip derives for web
+ * uploads — so cross-channel re-records of one slip dedupe to one ledger row.
+ */
+function slipIdFor(imageBuffer) {
   return crypto
     .createHash("sha256")
-    .update(String(messageId))
+    .update(imageBuffer)
     .digest("hex")
     .slice(0, 10);
 }
